@@ -1,0 +1,29 @@
+<?php
+
+namespace Database\Factories;
+
+use App\Models\Application;
+use App\Models\Candidate;
+use App\Models\JobPosting;
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+/**
+ * @extends Factory<Application>
+ */
+class ApplicationFactory extends Factory
+{
+    public function definition(): array
+    {
+        return [
+            'job_posting_id' => JobPosting::factory()->open(),
+            'candidate_id' => Candidate::factory()->withCv(),
+            'source' => 'portal',
+            'status' => 'applied',
+            'rejection_reason' => null,
+            'rejection_stage' => null,
+            'consent' => true,
+            'consent_at' => now(),
+            'withdrawn_at' => null,
+        ];
+    }
+}

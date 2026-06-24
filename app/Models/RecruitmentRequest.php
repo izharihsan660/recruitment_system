@@ -56,4 +56,9 @@ class RecruitmentRequest extends Model
     {
         return $this->hasMany(ApprovalRecord::class)->orderBy('level');
     }
+
+    public function jobPostings(): HasMany
+    {
+        return $this->hasMany(JobPosting::class);
+    }
 }
