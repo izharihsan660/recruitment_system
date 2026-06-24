@@ -15,12 +15,13 @@ class JobPosting extends Model
 
     protected $fillable = [
         'recruitment_request_id', 'entity_id', 'department_id', 'position_name', 'employment_status',
-        'work_location', 'job_description', 'requirements', 'mcu_required', 'simper_required',
+        'work_location', 'job_description', 'requirements', 'test_required', 'mcu_required', 'simper_required',
         'status', 'opened_at', 'closed_at',
     ];
 
     protected $attributes = [
         'status' => 'draft',
+        'test_required' => true,
         'mcu_required' => false,
         'simper_required' => false,
     ];
@@ -28,6 +29,7 @@ class JobPosting extends Model
     protected function casts(): array
     {
         return [
+            'test_required' => 'boolean',
             'mcu_required' => 'boolean',
             'simper_required' => 'boolean',
             'opened_at' => 'datetime',

@@ -20,6 +20,7 @@ class StoreJobPostingRequest extends FormRequest
             'work_location' => ['sometimes', 'string', 'max:255'],
             'job_description' => ['sometimes', 'string'],
             'requirements' => ['required', 'string'],
+            'test_required' => ['sometimes', 'boolean'],
             'mcu_required' => ['sometimes', 'boolean'],
             'simper_required' => ['sometimes', 'boolean'],
         ];

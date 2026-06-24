@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use Database\Factories\GraphApiConfigFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class GraphApiConfig extends Model
 {
-    /** @use HasFactory<\Database\Factories\GraphApiConfigFactory> */
+    /** @use HasFactory<GraphApiConfigFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -15,6 +16,7 @@ class GraphApiConfig extends Model
         'client_id',
         'client_secret',
         'calendar_user_email',
+        'recruitment_mailbox',
         'is_active',
     ];
 

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('job_posting_id')->constrained()->cascadeOnDelete();
             $table->foreignId('candidate_id')->constrained()->cascadeOnDelete();
             $table->enum('source', ['portal', 'hr_input', 'email_intake', 'talent_pool'])->default('portal');
-            $table->enum('status', ['applied', 'screening', 'test', 'interview_hr', 'interview_user', 'background_check', 'offering', 'mcu_simper', 'hiring_decision', 'pkwt', 'hired', 'rejected', 'withdrawn'])->default('applied')->index();
+            $table->enum('status', ['applied', 'screening', 'test_psikotes', 'interview_hr', 'interview_user', 'background_check', 'offering', 'mcu_simper', 'hiring_decision', 'pkwt', 'hired', 'rejected', 'withdrawn'])->default('applied')->index();
             $table->text('rejection_reason')->nullable();
             $table->string('rejection_stage')->nullable();
             $table->boolean('consent')->default(false);

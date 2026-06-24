@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ApprovalChainController;
+use App\Http\Controllers\Admin\CandidateSourceController;
 use App\Http\Controllers\Admin\CompanyProfileController;
 use App\Http\Controllers\Admin\CompanySignerController;
 use App\Http\Controllers\Admin\DepartmentController;
@@ -11,11 +12,15 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\CandidateAuthController;
 use App\Http\Controllers\CandidateDocumentController;
 use App\Http\Controllers\CandidatePortalController;
+use App\Http\Controllers\EmailIntakeController;
 use App\Http\Controllers\FpkController;
+use App\Http\Controllers\HrCandidateInputController;
 use App\Http\Controllers\JobPostingController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PipelineController;
 use App\Http\Controllers\PortalController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TalentPoolController;
 use App\Support\Roles;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -73,6 +78,7 @@ Route::prefix('admin')
         Route::apiResource('entities', EntityController::class);
         Route::apiResource('departments', DepartmentController::class);
         Route::apiResource('approval-chains', ApprovalChainController::class);
+        Route::apiResource('candidate-sources', CandidateSourceController::class);
         Route::apiResource('company-signers', CompanySignerController::class);
         Route::post('smtp-settings/{smtp_setting}/test-connection', [SmtpSettingController::class, 'testConnection'])
             ->name('smtp-settings.test-connection');
@@ -85,6 +91,40 @@ Route::prefix('admin')
         Route::post('company-profile/gallery', [CompanyProfileController::class, 'gallery'])->name('company-profile.gallery');
         Route::delete('company-profile/gallery/{index}', [CompanyProfileController::class, 'deleteGallery'])->name('company-profile.gallery.delete');
     });
+
+Route::middleware(['auth', 'active', 'role:'.Roles::HrRecruiter.'|'.Roles::HrManager])->group(function () {
+    Route::prefix('hr/candidates')->group(function () {
+        Route::post('input-to-job', [HrCandidateInputController::class, 'inputToJob']);
+        Route::post('input-to-talent-pool', [HrCandidateInputController::class, 'inputToTalentPool']);
+    });
+
+    Route::prefix('hr/talent-pool')->group(function () {
+        Route::get('/', [TalentPoolController::class, 'index']);
+        Route::get('{talentPool}', [TalentPoolController::class, 'show']);
+        Route::post('/', [TalentPoolController::class, 'store']);
+        Route::put('{talentPool}', [TalentPoolController::class, 'update']);
+        Route::post('{talentPool}/assign-to-job', [TalentPoolController::class, 'assignToJob']);
+    });
+
+    Route::prefix('hr/email-intake')->group(function () {
+        Route::get('/', [EmailIntakeController::class, 'index']);
+        Route::get('{emailIntake}', [EmailIntakeController::class, 'show']);
+        Route::post('fetch', [EmailIntakeController::class, 'fetch']);
+        Route::post('{emailIntake}/assign-to-job', [EmailIntakeController::class, 'assignToJob']);
+        Route::post('{emailIntake}/move-to-talent-pool', [EmailIntakeController::class, 'moveToTalentPool']);
+        Route::post('{emailIntake}/reject', [EmailIntakeController::class, 'reject']);
+        Route::post('{emailIntake}/ignore', [EmailIntakeController::class, 'ignore']);
+        Route::post('{emailIntake}/spam', [EmailIntakeController::class, 'spam']);
+    });
+
+    Route::prefix('hr/pipeline')->group(function () {
+        Route::get('/', [PipelineController::class, 'index']);
+        Route::get('{pipeline}', [PipelineController::class, 'show']);
+        Route::post('{pipeline}/move', [PipelineController::class, 'move']);
+        Route::post('{pipeline}/reject', [PipelineController::class, 'reject']);
+        Route::post('{pipeline}/withdraw', [PipelineController::class, 'withdraw']);
+    });
+});
 
 Route::prefix('candidate')->name('candidate.')->group(function () {
     Route::post('register', [CandidateAuthController::class, 'register'])->name('register');

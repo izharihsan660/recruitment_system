@@ -18,6 +18,7 @@ class UpdateJobPostingRequest extends FormRequest
             'work_location' => ['sometimes', 'string', 'max:255'],
             'job_description' => ['sometimes', 'string'],
             'requirements' => ['sometimes', 'string'],
+            'test_required' => ['sometimes', 'boolean'],
             'mcu_required' => ['sometimes', 'boolean'],
             'simper_required' => ['sometimes', 'boolean'],
         ];

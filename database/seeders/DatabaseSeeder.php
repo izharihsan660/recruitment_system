@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             EntitySeeder::class,
             DepartmentSeeder::class,
+            CandidateSourceSeeder::class,
             CompanyProfileSeeder::class,
         ]);
 

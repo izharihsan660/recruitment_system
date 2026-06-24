@@ -14,8 +14,9 @@ class Application extends Model
     use HasFactory;
 
     protected $fillable = [
-        'job_posting_id', 'candidate_id', 'source', 'status', 'rejection_reason', 'rejection_stage',
-        'consent', 'consent_at', 'withdrawn_at',
+        'job_posting_id', 'candidate_id', 'source', 'source_id', 'referral_name', 'referral_department',
+        'referral_phone', 'referral_relation', 'referral_notes', 'input_by', 'status', 'rejection_reason',
+        'rejection_stage', 'consent', 'consent_at', 'consent_by', 'withdrawn_at',
     ];
 
     protected function casts(): array
@@ -37,6 +38,26 @@ class Application extends Model
         return $this->belongsTo(Candidate::class);
     }
 
+    public function candidateSource(): BelongsTo
+    {
+        return $this->belongsTo(CandidateSource::class, 'source_id');
+    }
+
+    public function inputBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'input_by');
+    }
+
+    public function consentBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'consent_by');
+    }
+
+    public function pipelineLogs(): HasMany
+    {
+        return $this->hasMany(PipelineLog::class);
+    }
+
     public function documents(): HasMany
     {
         return $this->hasMany(CandidateDocument::class);
@@ -45,7 +66,7 @@ class Application extends Model
     public function portalStatusLabel(): string
     {
         return match ($this->status) {
-            'applied', 'screening', 'test' => 'Lamaran Sedang Diproses',
+            'applied', 'screening', 'test', 'test_psikotes' => 'Lamaran Sedang Diproses',
             'interview_hr', 'interview_user' => 'Tahap Interview',
             'background_check', 'mcu_simper' => 'Tahap Verifikasi',
             'offering', 'hiring_decision' => 'Tahap Penawaran',

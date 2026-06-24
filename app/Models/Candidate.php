@@ -44,6 +44,11 @@ class Candidate extends Authenticatable
         return $this->hasMany(CandidateDocument::class);
     }
 
+    public function talentPools(): HasMany
+    {
+        return $this->hasMany(TalentPool::class);
+    }
+
     public function hasCv(): bool
     {
         return filled($this->cv_path);

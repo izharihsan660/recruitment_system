@@ -11,6 +11,7 @@ class StoreGraphApiConfigRequest extends AdminFormRequest
             'client_id' => ['required', 'string', 'max:255'],
             'client_secret' => ['required', 'string'],
             'calendar_user_email' => ['required', 'email', 'max:255'],
+            'recruitment_mailbox' => ['nullable', 'email', 'max:255'],
             'is_active' => ['sometimes', 'boolean'],
         ];
     }
