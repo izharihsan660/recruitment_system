@@ -2,9 +2,21 @@ export type User = {
     id: number;
     name: string;
     email: string;
+    department_id?: number | null;
+    roles?: string[];
     email_verified_at?: string | null;
     created_at?: string;
     updated_at?: string;
+};
+
+export type InAppNotification = {
+    id: number;
+    type: string;
+    title: string;
+    body: string;
+    data?: Record<string, number | string | null>;
+    read_at?: string | null;
+    created_at?: string;
 };
 
 export type PageProps<
@@ -13,6 +25,8 @@ export type PageProps<
     auth: {
         user: User;
     };
+    unread_notifications_count?: number;
+    latest_notifications?: InAppNotification[];
 };
 
 export type Candidate = {

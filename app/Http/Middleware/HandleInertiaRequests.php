@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\InAppNotification;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -29,11 +30,43 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user ? [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'department_id' => $user->department_id,
+                    'roles' => $user->getRoleNames()->values()->all(),
+                ] : null,
             ],
+            'unread_notifications_count' => fn (): int => $user
+                ? InAppNotification::query()
+                    ->where('user_id', $user->id)
+                    ->whereNull('read_at')
+                    ->count()
+                : 0,
+            'latest_notifications' => fn (): array => $user
+                ? InAppNotification::query()
+                    ->where('user_id', $user->id)
+                    ->latest()
+                    ->limit(10)
+                    ->get()
+                    ->map(fn (InAppNotification $notification): array => [
+                        'id' => $notification->id,
+                        'type' => $notification->type,
+                        'title' => $notification->title,
+                        'body' => $notification->body,
+                        'data' => $notification->data,
+                        'read_at' => $notification->read_at,
+                        'created_at' => $notification->created_at,
+                    ])
+                    ->values()
+                    ->all()
+                : [],
         ];
     }
 }

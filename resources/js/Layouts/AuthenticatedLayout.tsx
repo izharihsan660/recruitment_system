@@ -1,179 +1,378 @@
-import ApplicationLogo from '@/Components/ApplicationLogo';
-import Dropdown from '@/Components/Dropdown';
-import NavLink from '@/Components/NavLink';
-import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
-import { Link, usePage } from '@inertiajs/react';
-import { PropsWithChildren, ReactNode, useState } from 'react';
+import { Link, router, usePage } from '@inertiajs/react';
+import {
+    Bell,
+    Briefcase,
+    Building2,
+    ChevronLeft,
+    ClipboardList,
+    Database,
+    FolderCog,
+    LayoutDashboard,
+    LogOut,
+    Mail,
+    Menu,
+    Network,
+    ShieldCheck,
+    Users,
+    UserSquare2,
+    Workflow,
+    X,
+} from 'lucide-react';
+import { PropsWithChildren, ReactNode, useMemo, useState } from 'react';
 
-export default function Authenticated({
+import { PageProps } from '@/types';
+
+interface MenuItem {
+    label: string;
+    href?: string;
+    routeName?: string;
+    icon?: ReactNode;
+    children?: MenuItem[];
+}
+
+export default function AuthenticatedLayout({
     header,
     children,
-}: PropsWithChildren<{ header?: ReactNode }>) {
-    const user = usePage().props.auth.user;
+}: PropsWithChildren<{ header?: ReactNode }>): JSX.Element {
+    const { auth, unread_notifications_count } = usePage<PageProps>().props;
+    const user = auth.user;
 
-    const [showingNavigationDropdown, setShowingNavigationDropdown] =
-        useState(false);
+    const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+    const role = useMemo((): string => {
+        if (!user?.roles || user.roles.length === 0) {
+            return '';
+        }
+
+        return user.roles[0];
+    }, [user]);
+
+    const menuItems = useMemo(() => getMenuItemsByRole(role), [role]);
+
+    const isActive = (item: MenuItem): boolean => {
+        if (item.routeName && route().current(item.routeName)) {
+            return true;
+        }
+
+        if (item.href && currentPathStartsWith(item.href)) {
+            return true;
+        }
+
+        if (item.children) {
+            return item.children.some((child) => isActive(child));
+        }
+
+        return false;
+    };
+
+    const renderMenuItem = (item: MenuItem): JSX.Element => {
+        if (item.children && item.children.length > 0) {
+            const expanded = isActive(item);
+
+            return (
+                <div key={item.label} className="space-y-1">
+                    <div className="px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        {item.label}
+                    </div>
+                    <div className="space-y-1">
+                        {item.children.map((child) => renderMenuItem(child))}
+                    </div>
+                    {expanded && <div className="pt-1" />}
+                </div>
+            );
+        }
+
+        const active = isActive(item);
+
+        return (
+            <Link
+                key={item.label}
+                href={item.href ?? '#'}
+                className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition ${
+                    active
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        : 'text-slate-700 hover:bg-slate-100'
+                }`}
+                onClick={() => setMobileSidebarOpen(false)}
+            >
+                <span className="shrink-0">{item.icon}</span>
+                <span>{item.label}</span>
+            </Link>
+        );
+    };
 
     return (
-        <div className="min-h-screen bg-gray-100">
-            <nav className="border-b border-gray-100 bg-white">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="flex h-16 justify-between">
-                        <div className="flex">
-                            <div className="flex shrink-0 items-center">
-                                <Link href="/">
-                                    <ApplicationLogo className="block h-9 w-auto fill-current text-gray-800" />
-                                </Link>
-                            </div>
-
-                            <div className="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                <NavLink
-                                    href={route('dashboard')}
-                                    active={route().current('dashboard')}
-                                >
-                                    Dashboard
-                                </NavLink>
-                            </div>
-                        </div>
-
-                        <div className="hidden sm:ms-6 sm:flex sm:items-center">
-                            <div className="relative ms-3">
-                                <Dropdown>
-                                    <Dropdown.Trigger>
-                                        <span className="inline-flex rounded-md">
-                                            <button
-                                                type="button"
-                                                className="inline-flex items-center rounded-md border border-transparent bg-white px-3 py-2 text-sm font-medium leading-4 text-gray-500 transition duration-150 ease-in-out hover:text-gray-700 focus:outline-none"
-                                            >
-                                                {user.name}
-
-                                                <svg
-                                                    className="-me-0.5 ms-2 h-4 w-4"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    viewBox="0 0 20 20"
-                                                    fill="currentColor"
-                                                >
-                                                    <path
-                                                        fillRule="evenodd"
-                                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                                        clipRule="evenodd"
-                                                    />
-                                                </svg>
-                                            </button>
-                                        </span>
-                                    </Dropdown.Trigger>
-
-                                    <Dropdown.Content>
-                                        <Dropdown.Link
-                                            href={route('profile.edit')}
-                                        >
-                                            Profile
-                                        </Dropdown.Link>
-                                        <Dropdown.Link
-                                            href={route('logout')}
-                                            method="post"
-                                            as="button"
-                                        >
-                                            Log Out
-                                        </Dropdown.Link>
-                                    </Dropdown.Content>
-                                </Dropdown>
-                            </div>
-                        </div>
-
-                        <div className="-me-2 flex items-center sm:hidden">
-                            <button
-                                onClick={() =>
-                                    setShowingNavigationDropdown(
-                                        (previousState) => !previousState,
-                                    )
-                                }
-                                className="inline-flex items-center justify-center rounded-md p-2 text-gray-400 transition duration-150 ease-in-out hover:bg-gray-100 hover:text-gray-500 focus:bg-gray-100 focus:text-gray-500 focus:outline-none"
-                            >
-                                <svg
-                                    className="h-6 w-6"
-                                    stroke="currentColor"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        className={
-                                            !showingNavigationDropdown
-                                                ? 'inline-flex'
-                                                : 'hidden'
-                                        }
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M4 6h16M4 12h16M4 18h16"
-                                    />
-                                    <path
-                                        className={
-                                            showingNavigationDropdown
-                                                ? 'inline-flex'
-                                                : 'hidden'
-                                        }
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M6 18L18 6M6 6l12 12"
-                                    />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div
-                    className={
-                        (showingNavigationDropdown ? 'block' : 'hidden') +
-                        ' sm:hidden'
-                    }
-                >
-                    <div className="space-y-1 pb-3 pt-2">
-                        <ResponsiveNavLink
-                            href={route('dashboard')}
-                            active={route().current('dashboard')}
+        <div className="min-h-screen bg-slate-50">
+            <div className="lg:hidden">
+                <div className="fixed left-0 right-0 top-0 z-40 border-b bg-white px-4 py-3">
+                    <div className="flex items-center justify-between">
+                        <button
+                            type="button"
+                            className="rounded-md border border-slate-200 p-2 text-slate-700"
+                            onClick={() => setMobileSidebarOpen(true)}
                         >
-                            Dashboard
-                        </ResponsiveNavLink>
-                    </div>
-
-                    <div className="border-t border-gray-200 pb-1 pt-4">
-                        <div className="px-4">
-                            <div className="text-base font-medium text-gray-800">
-                                {user.name}
-                            </div>
-                            <div className="text-sm font-medium text-gray-500">
-                                {user.email}
-                            </div>
-                        </div>
-
-                        <div className="mt-3 space-y-1">
-                            <ResponsiveNavLink href={route('profile.edit')}>
-                                Profile
-                            </ResponsiveNavLink>
-                            <ResponsiveNavLink
-                                method="post"
-                                href={route('logout')}
-                                as="button"
-                            >
-                                Log Out
-                            </ResponsiveNavLink>
-                        </div>
+                            <Menu className="h-5 w-5" />
+                        </button>
+                        <span className="text-sm font-semibold text-slate-900">
+                            Sistem Rekrutmen
+                        </span>
+                        <Link
+                            href={route('notifications.index')}
+                            className="relative rounded-md border border-slate-200 p-2 text-slate-700"
+                        >
+                            <Bell className="h-5 w-5" />
+                            {(unread_notifications_count ?? 0) > 0 && (
+                                <span className="absolute -right-1 -top-1 rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                                    {unread_notifications_count}
+                                </span>
+                            )}
+                        </Link>
                     </div>
                 </div>
-            </nav>
+            </div>
 
-            {header && (
-                <header className="bg-white shadow">
-                    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                        {header}
-                    </div>
-                </header>
+            {mobileSidebarOpen && (
+                <button
+                    type="button"
+                    className="fixed inset-0 z-40 bg-black/30 lg:hidden"
+                    onClick={() => setMobileSidebarOpen(false)}
+                    aria-label="Tutup sidebar"
+                />
             )}
 
-            <main>{children}</main>
+            <aside
+                className={`fixed inset-y-0 left-0 z-50 flex w-60 flex-col border-r border-slate-200 bg-white transition-transform duration-200 ${
+                    mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+                }`}
+            >
+                <div className="flex h-16 items-center justify-between border-b px-4">
+                    <Link href={route('dashboard')} className="text-sm font-bold text-slate-900">
+                        Rekrutmen Internal
+                    </Link>
+                    <button
+                        type="button"
+                        className="rounded-md p-1 text-slate-500 lg:hidden"
+                        onClick={() => setMobileSidebarOpen(false)}
+                    >
+                        <X className="h-5 w-5" />
+                    </button>
+                </div>
+
+                <nav className="flex-1 space-y-4 overflow-y-auto px-3 py-4">
+                    {menuItems.map((item) => renderMenuItem(item))}
+                </nav>
+
+                <div className="border-t px-4 py-4">
+                    <div className="mb-3 rounded-md bg-slate-100 p-3">
+                        <p className="text-sm font-semibold text-slate-900">{user?.name}</p>
+                        <p className="text-xs capitalize text-slate-600">{formatRoleLabel(role)}</p>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={() => router.post(route('logout'))}
+                        className="flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                    >
+                        <LogOut className="h-4 w-4" />
+                        <span>Logout</span>
+                    </button>
+                </div>
+            </aside>
+
+            <div className="lg:pl-60">
+                <header className="sticky top-0 z-30 border-b bg-white/95 backdrop-blur">
+                    <div className="flex h-16 items-center justify-between px-4 lg:px-6">
+                        <div className="flex items-center gap-3">
+                            <div className="hidden text-sm text-slate-500 lg:flex">
+                                <ChevronLeft className="h-4 w-4 rotate-180" />
+                            </div>
+                            {header ? (
+                                <div>{header}</div>
+                            ) : (
+                                <h1 className="text-lg font-semibold text-slate-900">Dashboard</h1>
+                            )}
+                        </div>
+
+                        <Link
+                            href={route('notifications.index')}
+                            className="relative rounded-md border border-slate-200 p-2 text-slate-700 hover:bg-slate-100"
+                        >
+                            <Bell className="h-5 w-5" />
+                            {(unread_notifications_count ?? 0) > 0 && (
+                                <span className="absolute -right-1 -top-1 rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                                    {unread_notifications_count}
+                                </span>
+                            )}
+                        </Link>
+                    </div>
+                </header>
+
+                <main className="h-[calc(100vh-4rem)] overflow-y-auto p-4 lg:p-6">{children}</main>
+            </div>
         </div>
     );
+}
+
+function currentPathStartsWith(path: string): boolean {
+    if (typeof window !== 'undefined') {
+        return window.location.pathname.startsWith(path);
+    }
+
+    return false;
+}
+
+function formatRoleLabel(role: string): string {
+    return role.replaceAll('_', ' ');
+}
+
+function getMenuItemsByRole(role: string): MenuItem[] {
+    const adminMenus: MenuItem[] = [
+        {
+            label: 'Dashboard',
+            routeName: 'dashboard',
+            href: route('dashboard'),
+            icon: <LayoutDashboard className="h-4 w-4" />,
+        },
+        {
+            label: 'Master Data',
+            children: [
+                {
+                    label: 'Entitas (PT)',
+                    href: '/admin/entities',
+                    icon: <Building2 className="h-4 w-4" />,
+                },
+                {
+                    label: 'Departemen',
+                    href: '/admin/departments',
+                    icon: <Database className="h-4 w-4" />,
+                },
+                {
+                    label: 'Approval Chain',
+                    href: '/admin/approval-chains',
+                    icon: <Workflow className="h-4 w-4" />,
+                },
+                {
+                    label: 'Company Signer',
+                    href: '/admin/company-signers',
+                    icon: <ShieldCheck className="h-4 w-4" />,
+                },
+                {
+                    label: 'Source Kandidat',
+                    href: '/admin/candidate-sources',
+                    icon: <Users className="h-4 w-4" />,
+                },
+            ],
+        },
+        {
+            label: 'Konfigurasi',
+            children: [
+                {
+                    label: 'SMTP',
+                    href: '/admin/smtp',
+                    icon: <Mail className="h-4 w-4" />,
+                },
+                {
+                    label: 'Microsoft Graph API',
+                    href: '/admin/graph-api',
+                    icon: <Network className="h-4 w-4" />,
+                },
+                {
+                    label: 'CMS Portal',
+                    href: '/admin/cms',
+                    icon: <FolderCog className="h-4 w-4" />,
+                },
+            ],
+        },
+    ];
+
+    const hrMenus: MenuItem[] = [
+        {
+            label: 'Dashboard',
+            routeName: 'dashboard',
+            href: route('dashboard'),
+            icon: <LayoutDashboard className="h-4 w-4" />,
+        },
+        {
+            label: 'Recruitment Request (FPK)',
+            href: '/fpk',
+            icon: <ClipboardList className="h-4 w-4" />,
+        },
+        {
+            label: 'Lowongan Kerja',
+            href: '/job-postings',
+            icon: <Briefcase className="h-4 w-4" />,
+        },
+        {
+            label: 'Pipeline Kandidat',
+            href: '/pipeline',
+            icon: <Workflow className="h-4 w-4" />,
+        },
+        {
+            label: 'Input Kandidat',
+            href: '/hr/candidates/input',
+            icon: <UserSquare2 className="h-4 w-4" />,
+        },
+        {
+            label: 'Email Intake',
+            href: '/hr/email-intake',
+            icon: <Mail className="h-4 w-4" />,
+        },
+        {
+            label: 'Talent Pool',
+            href: '/hr/talent-pool',
+            icon: <Users className="h-4 w-4" />,
+        },
+    ];
+
+    const hiringManagerMenus: MenuItem[] = [
+        {
+            label: 'Dashboard',
+            routeName: 'dashboard',
+            href: route('dashboard'),
+            icon: <LayoutDashboard className="h-4 w-4" />,
+        },
+        {
+            label: 'Recruitment Request (FPK)',
+            href: '/fpk',
+            icon: <ClipboardList className="h-4 w-4" />,
+        },
+        {
+            label: 'Pipeline Kandidat',
+            href: '/pipeline',
+            icon: <Workflow className="h-4 w-4" />,
+        },
+    ];
+
+    const preboardingMenus: MenuItem[] = [
+        {
+            label: 'Pre-boarding Tasks',
+            href: '/preboarding',
+            icon: <ClipboardList className="h-4 w-4" />,
+        },
+    ];
+
+    if (role === 'admin') {
+        return adminMenus;
+    }
+
+    if (role === 'hr_recruiter' || role === 'hr_manager') {
+        return hrMenus;
+    }
+
+    if (role === 'hiring_manager' || role === 'approver') {
+        return hiringManagerMenus;
+    }
+
+    if (role === 'pic_preboarding') {
+        return preboardingMenus;
+    }
+
+    return [
+        {
+            label: 'Dashboard',
+            routeName: 'dashboard',
+            href: route('dashboard'),
+            icon: <LayoutDashboard className="h-4 w-4" />,
+        },
+    ];
 }
