@@ -25,8 +25,38 @@ class DatabaseSeeder extends Seeder
         );
 
         User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+            'name' => 'Super Admin',
+            'username' => 'superadmin',
+            'email' => 'superadmin@example.com',
+            'password' => bcrypt('123123'),
         ])->assignRole(Roles::Admin);
+
+        User::factory()->create([
+            'name' => 'HR Recruiter',
+            'username' => 'hrrecruiter',
+            'email' => 'hr@example.com',
+            'password' => bcrypt('123123'),
+        ])->assignRole(Roles::HrRecruiter);
+
+        User::factory()->create([
+            'name' => 'HR Manager',
+            'username' => 'hrmanager',
+            'email' => 'hrmanager@example.com',
+            'password' => bcrypt('123123'),
+        ])->assignRole(Roles::HrManager);
+
+        User::factory()->create([
+            'name' => 'Hiring Manager',
+            'username' => 'hiringmanager',
+            'email' => 'hiring@example.com',
+            'password' => bcrypt('123123'),
+        ])->assignRole(Roles::HiringManager);
+
+        User::factory()->create([
+            'name' => 'Approver',
+            'username' => 'approver',
+            'email' => 'approver@example.com',
+            'password' => bcrypt('123123'),
+        ])->assignRole(Roles::Approver);
     }
 }
