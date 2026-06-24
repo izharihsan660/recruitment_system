@@ -30,8 +30,11 @@ class PipelineService
             $toStage = self::STAGES[$stageIndex + 1];
             $application->loadMissing('jobPosting');
 
+            $notes = null;
+
             if ($toStage === 'test_psikotes' && ! $application->jobPosting->test_required) {
                 $toStage = 'interview_hr';
+                $notes = 'Test psikotes tidak diperlukan untuk posisi ini.';
             }
 
             $application->update(['status' => $toStage]);
@@ -40,6 +43,7 @@ class PipelineService
                 'from_stage' => $fromStage,
                 'to_stage' => $toStage,
                 'actor_id' => $actor->id,
+                'notes' => $notes,
             ]);
         });
     }

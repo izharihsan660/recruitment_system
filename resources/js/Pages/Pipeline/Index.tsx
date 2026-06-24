@@ -210,6 +210,8 @@ export default function PipelineIndex({
                         Download CV
                     </a>
                     <div className="mt-6 space-y-3">
+                        <PipelineStageActions application={selected} />
+                        <PipelineSummary application={selected} />
                         <Button onClick={() => fallbackMove(selected)}>Pindah Stage</Button>
                         <RejectBox id={selected.id} />
                     </div>
@@ -371,6 +373,68 @@ function RejectBox({ id }: { id: number }): JSX.Element {
             </div>
         </div>
     );
+}
+
+function PipelineStageActions({ application }: { application: ApplicationItem }): JSX.Element | null {
+    const actions: Record<string, { href: string; labels: string[] }> = {
+        screening: { href: `/hr/screening/${application.id}`, labels: ['Isi Screening'] },
+        test_psikotes: { href: `/hr/psycho-test/${application.id}`, labels: application.psycho_test?.id ? ['Input Hasil Test'] : ['Input Jadwal Test'] },
+        interview_hr: { href: `/hr/interview-hr/${application.id}`, labels: application.hr_interview?.id ? ['Isi Scorecard'] : ['Jadwalkan Interview HR'] },
+        interview_user: { href: `/hr/interview-user/${application.id}`, labels: application.user_interview?.id ? ['Isi Scorecard'] : ['Jadwalkan Interview User'] },
+    };
+
+    const action = application.status ? actions[application.status] : null;
+
+    if (!action) {
+        return null;
+    }
+
+    return (
+        <div className="rounded-md border border-blue-100 bg-blue-50 p-3">
+            <p className="mb-2 text-sm font-semibold text-blue-900">Aksi Stage Saat Ini</p>
+            <div className="flex flex-wrap gap-2">
+                {action.labels.map((label) => (
+                    <a key={label} href={action.href} className="inline-flex rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700">
+                        {label}
+                    </a>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function PipelineSummary({ application }: { application: ApplicationItem }): JSX.Element | null {
+    const summaries = [
+        application.screening?.decision ? `Screening: ${decisionLabel(application.screening.decision)}` : null,
+        application.psycho_test?.decision ? `Psikotes: ${decisionLabel(application.psycho_test.decision)}` : null,
+        application.hr_interview?.recommendation ? `Interview HR: ${decisionLabel(application.hr_interview.recommendation)}` : null,
+        application.user_interview?.recommendation ? `Interview User: ${decisionLabel(application.user_interview.recommendation)}` : null,
+    ].filter(Boolean);
+
+    if (summaries.length === 0) {
+        return null;
+    }
+
+    return (
+        <div className="space-y-2 rounded-md border border-slate-200 p-3 text-sm text-slate-700">
+            {summaries.map((summary) => <p key={summary}>{summary}</p>)}
+        </div>
+    );
+}
+
+function decisionLabel(value: string): string {
+    const labels: Record<string, string> = {
+        passed: 'Lolos',
+        failed: 'Tidak Lolos',
+        pending_info: 'Pending Info',
+        recommended: 'Direkomendasikan',
+        considered: 'Dipertimbangkan',
+        not_recommended: 'Tidak Direkomendasikan',
+        accepted: 'Diterima',
+        rejected: 'Ditolak',
+    };
+
+    return labels[value] ?? humanize(value);
 }
 
 function fallbackMove(application: ApplicationItem): void {

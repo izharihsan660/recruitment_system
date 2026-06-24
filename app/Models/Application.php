@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Application extends Model
 {
@@ -56,6 +57,26 @@ class Application extends Model
     public function pipelineLogs(): HasMany
     {
         return $this->hasMany(PipelineLog::class);
+    }
+
+    public function screening(): HasOne
+    {
+        return $this->hasOne(Screening::class);
+    }
+
+    public function psychoTest(): HasOne
+    {
+        return $this->hasOne(PsychoTest::class);
+    }
+
+    public function hrInterview(): HasOne
+    {
+        return $this->hasOne(HrInterview::class);
+    }
+
+    public function userInterview(): HasOne
+    {
+        return $this->hasOne(UserInterview::class);
     }
 
     public function documents(): HasMany

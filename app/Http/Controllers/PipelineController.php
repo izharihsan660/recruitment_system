@@ -16,7 +16,7 @@ class PipelineController extends Controller
 
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = Application::query()->with(['candidate', 'jobPosting'])->latest();
+        $query = Application::query()->with(['candidate', 'jobPosting', 'screening', 'psychoTest', 'hrInterview', 'userInterview'])->latest();
 
         if ($request->filled('job_posting_id')) {
             $query->where('job_posting_id', $request->integer('job_posting_id'));
@@ -43,7 +43,7 @@ class PipelineController extends Controller
 
     public function show(Application $pipeline): ApplicationResource
     {
-        return new ApplicationResource($pipeline->load(['candidate', 'jobPosting', 'pipelineLogs']));
+        return new ApplicationResource($pipeline->load(['candidate', 'jobPosting', 'pipelineLogs', 'screening', 'psychoTest', 'hrInterview', 'userInterview']));
     }
 
     public function move(Application $pipeline): Response

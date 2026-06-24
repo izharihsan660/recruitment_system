@@ -33,6 +33,10 @@ class ApplicationResource extends JsonResource
             'candidate' => new CandidateResource($this->whenLoaded('candidate')),
             'documents' => CandidateDocumentResource::collection($this->whenLoaded('documents')),
             'pipeline_logs' => PipelineLogResource::collection($this->whenLoaded('pipelineLogs')),
+            'screening' => new ScreeningResource($this->whenLoaded('screening')),
+            'psycho_test' => new PsychoTestResource($this->whenLoaded('psychoTest')),
+            'hr_interview' => new HrInterviewResource($this->whenLoaded('hrInterview')),
+            'user_interview' => new UserInterviewResource($this->whenLoaded('userInterview')),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

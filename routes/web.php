@@ -15,12 +15,16 @@ use App\Http\Controllers\CandidatePortalController;
 use App\Http\Controllers\EmailIntakeController;
 use App\Http\Controllers\FpkController;
 use App\Http\Controllers\HrCandidateInputController;
+use App\Http\Controllers\HrInterviewController;
 use App\Http\Controllers\JobPostingController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PipelineController;
 use App\Http\Controllers\PortalController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PsychoTestController;
+use App\Http\Controllers\ScreeningController;
 use App\Http\Controllers\TalentPoolController;
+use App\Http\Controllers\UserInterviewController;
 use App\Models\Application as CandidateApplication;
 use App\Models\ApprovalChain;
 use App\Models\CandidateSource;
@@ -165,7 +169,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     Route::get('/pipeline', function () {
         return Inertia::render('Pipeline/Index', [
-            'applications' => CandidateApplication::query()->with(['candidate', 'jobPosting'])->latest()->get(),
+            'applications' => CandidateApplication::query()->with(['candidate', 'jobPosting', 'screening', 'psychoTest', 'hrInterview', 'userInterview'])->latest()->get(),
             'jobPostings' => JobPosting::query()->where('status', 'open')->orderBy('position_name')->get(['id', 'position_name']),
             'departments' => Department::query()->orderBy('name')->get(['id', 'name']),
             'sources' => CandidateSource::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
@@ -280,7 +284,35 @@ Route::middleware(['auth', 'active', 'role:'.Roles::HrRecruiter.'|'.Roles::HrMan
         Route::post('{pipeline}/reject', [PipelineController::class, 'reject']);
         Route::post('{pipeline}/withdraw', [PipelineController::class, 'withdraw']);
     });
+
+    Route::prefix('hr/screening')->group(function () {
+        Route::get('{application}', [ScreeningController::class, 'show'])->name('screening.show');
+        Route::post('{application}', [ScreeningController::class, 'store'])->name('screening.store');
+        Route::put('{application}', [ScreeningController::class, 'update'])->name('screening.update');
+    });
+
+    Route::prefix('hr/psycho-test')->group(function () {
+        Route::get('{application}', [PsychoTestController::class, 'show'])->name('psycho-test.show');
+        Route::post('{application}/schedule', [PsychoTestController::class, 'schedule'])->name('psycho-test.schedule');
+        Route::post('{application}/result', [PsychoTestController::class, 'result'])->name('psycho-test.result');
+    });
+
+    Route::prefix('hr/interview-hr')->group(function () {
+        Route::get('{application}', [HrInterviewController::class, 'show'])->name('interview-hr.show');
+        Route::post('{application}/schedule', [HrInterviewController::class, 'schedule'])->name('interview-hr.schedule');
+        Route::post('{application}/scorecard', [HrInterviewController::class, 'scorecard'])->name('interview-hr.scorecard');
+    });
+
 });
+
+Route::middleware(['auth', 'active', 'role:'.Roles::HrRecruiter.'|'.Roles::HrManager.'|'.Roles::HiringManager])
+    ->prefix('hr/interview-user')
+    ->group(function () {
+        Route::get('{application}', [UserInterviewController::class, 'show'])->name('interview-user.show');
+        Route::post('{application}/schedule', [UserInterviewController::class, 'schedule'])->name('interview-user.schedule');
+        Route::put('{application}/reschedule', [UserInterviewController::class, 'reschedule'])->name('interview-user.reschedule');
+        Route::post('{application}/scorecard', [UserInterviewController::class, 'scorecard'])->name('interview-user.scorecard');
+    });
 
 Route::prefix('candidate')->name('candidate.')->group(function () {
     Route::get('register', [CandidateAuthController::class, 'showRegister'])->middleware('guest:candidate')->name('register.form');

@@ -130,6 +130,10 @@ export interface ApplicationItem {
     job_posting?: JobPosting;
     jobPosting?: JobPosting;
     pipeline_logs?: PipelineLog[];
+    screening?: { decision?: string | null } | null;
+    psycho_test?: { id?: number; decision?: string | null; scheduled_at?: string | null } | null;
+    hr_interview?: { id?: number; recommendation?: string | null; status?: string | null } | null;
+    user_interview?: { id?: number; recommendation?: string | null; status?: string | null } | null;
 }
 
 export interface PipelineLog {
