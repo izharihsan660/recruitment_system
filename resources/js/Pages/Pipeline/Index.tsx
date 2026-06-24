@@ -381,6 +381,9 @@ function PipelineStageActions({ application }: { application: ApplicationItem })
         test_psikotes: { href: `/hr/psycho-test/${application.id}`, labels: application.psycho_test?.id ? ['Input Hasil Test'] : ['Input Jadwal Test'] },
         interview_hr: { href: `/hr/interview-hr/${application.id}`, labels: application.hr_interview?.id ? ['Isi Scorecard'] : ['Jadwalkan Interview HR'] },
         interview_user: { href: `/hr/interview-user/${application.id}`, labels: application.user_interview?.id ? ['Isi Scorecard'] : ['Jadwalkan Interview User'] },
+        background_check: { href: `/hr/background-check/${application.id}`, labels: ['Isi Background Check'] },
+        offering: { href: `/hr/offering/${application.id}`, labels: [application.offering_letter?.id ? 'Lihat Offering' : 'Buat Offering'] },
+        pkwt: { href: `/hr/pkwt/${application.id}`, labels: [application.pkwt_contract?.id ? 'Lihat PKWT' : 'Buat PKWT'] },
     };
 
     const action = application.status ? actions[application.status] : null;
@@ -409,6 +412,9 @@ function PipelineSummary({ application }: { application: ApplicationItem }): JSX
         application.psycho_test?.decision ? `Psikotes: ${decisionLabel(application.psycho_test.decision)}` : null,
         application.hr_interview?.recommendation ? `Interview HR: ${decisionLabel(application.hr_interview.recommendation)}` : null,
         application.user_interview?.recommendation ? `Interview User: ${decisionLabel(application.user_interview.recommendation)}` : null,
+        application.background_check?.decision ? `Background Check: ${decisionLabel(application.background_check.decision)}` : null,
+        application.offering_letter?.status ? `Offering: ${decisionLabel(application.offering_letter.status)}${application.offering_letter.signed_at ? ` - Signed ${application.offering_letter.signed_at}` : ''}` : null,
+        application.pkwt_contract?.status ? `PKWT: ${decisionLabel(application.pkwt_contract.status)}${application.pkwt_contract.signed_at ? ` - Signed ${application.pkwt_contract.signed_at}` : ''}` : null,
     ].filter(Boolean);
 
     if (summaries.length === 0) {
@@ -432,6 +438,15 @@ function decisionLabel(value: string): string {
         not_recommended: 'Tidak Direkomendasikan',
         accepted: 'Diterima',
         rejected: 'Ditolak',
+        clear: 'Clear',
+        issue: 'Issue',
+        draft: 'Draft',
+        sent: 'Terkirim',
+        viewed: 'Dilihat',
+        negotiation: 'Negosiasi',
+        expired: 'Expired',
+        signed: 'Signed',
+        partially_signed: 'Sebagian Signed',
     };
 
     return labels[value] ?? humanize(value);

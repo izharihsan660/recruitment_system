@@ -79,6 +79,21 @@ class Application extends Model
         return $this->hasOne(UserInterview::class);
     }
 
+    public function backgroundCheck(): HasOne
+    {
+        return $this->hasOne(BackgroundCheck::class);
+    }
+
+    public function offeringLetter(): HasOne
+    {
+        return $this->hasOne(OfferingLetter::class);
+    }
+
+    public function pkwtContract(): HasOne
+    {
+        return $this->hasOne(PkwtContract::class);
+    }
+
     public function documents(): HasMany
     {
         return $this->hasMany(CandidateDocument::class);

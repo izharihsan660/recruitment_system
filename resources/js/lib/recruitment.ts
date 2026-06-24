@@ -73,6 +73,7 @@ export interface JobPosting {
     position_name?: string;
     department?: Department;
     entity?: Entity;
+    recruitment_request?: RecruitmentRequest;
     status?: string;
     work_location?: string;
     job_description?: string;
@@ -134,6 +135,9 @@ export interface ApplicationItem {
     psycho_test?: { id?: number; decision?: string | null; scheduled_at?: string | null } | null;
     hr_interview?: { id?: number; recommendation?: string | null; status?: string | null } | null;
     user_interview?: { id?: number; recommendation?: string | null; status?: string | null } | null;
+    background_check?: { id?: number; decision?: string | null } | null;
+    offering_letter?: { id?: number; status?: string | null; signed_at?: string | null } | null;
+    pkwt_contract?: { id?: number; status?: string | null; signed_at?: string | null } | null;
 }
 
 export interface PipelineLog {

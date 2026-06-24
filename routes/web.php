@@ -5,20 +5,25 @@ use App\Http\Controllers\Admin\CandidateSourceController;
 use App\Http\Controllers\Admin\CompanyProfileController;
 use App\Http\Controllers\Admin\CompanySignerController;
 use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\DocusealConfigController;
 use App\Http\Controllers\Admin\EntityController;
 use App\Http\Controllers\Admin\GraphApiConfigController;
 use App\Http\Controllers\Admin\SmtpSettingController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\BackgroundCheckController;
 use App\Http\Controllers\CandidateAuthController;
 use App\Http\Controllers\CandidateDocumentController;
 use App\Http\Controllers\CandidatePortalController;
+use App\Http\Controllers\DocuSealWebhookController;
 use App\Http\Controllers\EmailIntakeController;
 use App\Http\Controllers\FpkController;
 use App\Http\Controllers\HrCandidateInputController;
 use App\Http\Controllers\HrInterviewController;
 use App\Http\Controllers\JobPostingController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\OfferingLetterController;
 use App\Http\Controllers\PipelineController;
+use App\Http\Controllers\PkwtController;
 use App\Http\Controllers\PortalController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PsychoTestController;
@@ -31,6 +36,7 @@ use App\Models\CandidateSource;
 use App\Models\CompanyProfile;
 use App\Models\CompanySigner;
 use App\Models\Department;
+use App\Models\DocusealConfig;
 use App\Models\EmailIntake;
 use App\Models\Entity;
 use App\Models\GraphApiConfig;
@@ -44,6 +50,8 @@ use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+
+Route::post('/webhooks/docuseal', DocuSealWebhookController::class)->name('webhooks.docuseal');
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -108,6 +116,8 @@ Route::middleware(['auth', 'active'])->group(function () {
     ]))->name('fpk.edit');
 
     Route::prefix('fpk')->name('fpk.')->group(function () {
+        Route::post('/webhooks/docuseal', DocuSealWebhookController::class)->name('webhooks.docuseal');
+
         Route::get('/', function () {
             return Inertia::render('Fpk/Index', [
                 'fpk' => RecruitmentRequest::query()->with(['entity', 'department', 'requester'])->latest()->paginate(10),
@@ -209,6 +219,9 @@ Route::prefix('admin')
         Route::get('graph-api', fn () => Inertia::render('Admin/Configurations/GraphApi', [
             'graphApiConfigs' => GraphApiConfig::query()->latest()->get(),
         ]));
+        Route::get('docuseal', fn () => Inertia::render('Admin/Configurations/Docuseal', [
+            'docusealConfigs' => DocusealConfig::query()->latest()->get(),
+        ]));
         Route::get('cms', fn () => Inertia::render('Admin/Configurations/Cms', [
             'companyProfile' => CompanyProfile::query()->first(),
         ]));
@@ -225,6 +238,9 @@ Route::prefix('admin')
         Route::post('graph-api-configs/{graph_api_config}/test-connection', [GraphApiConfigController::class, 'testConnection'])
             ->name('graph-api-configs.test-connection');
         Route::apiResource('graph-api-configs', GraphApiConfigController::class);
+        Route::post('docuseal-configs/{docuseal_config}/test-connection', [DocusealConfigController::class, 'testConnection'])
+            ->name('docuseal-configs.test-connection');
+        Route::apiResource('docuseal-configs', DocusealConfigController::class);
         Route::put('company-profile', [CompanyProfileController::class, 'update'])->name('company-profile.update');
         Route::post('company-profile/hero-image', [CompanyProfileController::class, 'heroImage'])->name('company-profile.hero-image');
         Route::post('company-profile/gallery', [CompanyProfileController::class, 'gallery'])->name('company-profile.gallery');
@@ -243,6 +259,8 @@ Route::middleware(['auth', 'active', 'role:'.Roles::HrRecruiter.'|'.Roles::HrMan
     });
 
     Route::prefix('hr/talent-pool')->group(function () {
+        Route::post('/webhooks/docuseal', DocuSealWebhookController::class)->name('webhooks.docuseal');
+
         Route::get('/', function () {
             return Inertia::render('Hr/TalentPool/Index', [
                 'talentPools' => TalentPool::query()->with('candidate')->latest()->paginate(10),
@@ -259,6 +277,8 @@ Route::middleware(['auth', 'active', 'role:'.Roles::HrRecruiter.'|'.Roles::HrMan
     });
 
     Route::prefix('hr/email-intake')->group(function () {
+        Route::post('/webhooks/docuseal', DocuSealWebhookController::class)->name('webhooks.docuseal');
+
         Route::get('/', function () {
             return Inertia::render('Hr/EmailIntake/Index', [
                 'emails' => EmailIntake::query()->latest()->paginate(10),
@@ -295,6 +315,29 @@ Route::middleware(['auth', 'active', 'role:'.Roles::HrRecruiter.'|'.Roles::HrMan
         Route::get('{application}', [PsychoTestController::class, 'show'])->name('psycho-test.show');
         Route::post('{application}/schedule', [PsychoTestController::class, 'schedule'])->name('psycho-test.schedule');
         Route::post('{application}/result', [PsychoTestController::class, 'result'])->name('psycho-test.result');
+    });
+
+    Route::prefix('hr/background-check')->group(function () {
+        Route::get('{application}', [BackgroundCheckController::class, 'show'])->name('background-check.show');
+        Route::post('{application}', [BackgroundCheckController::class, 'store'])->name('background-check.store');
+        Route::put('{application}', [BackgroundCheckController::class, 'update'])->name('background-check.update');
+    });
+
+    Route::prefix('hr/offering')->group(function () {
+        Route::get('{application}', [OfferingLetterController::class, 'show'])->name('offering.show');
+        Route::post('{application}', [OfferingLetterController::class, 'store'])->name('offering.store');
+        Route::put('{application}', [OfferingLetterController::class, 'update'])->name('offering.update');
+        Route::post('{application}/send', [OfferingLetterController::class, 'send'])->name('offering.send');
+        Route::post('{application}/revise', [OfferingLetterController::class, 'revise'])->name('offering.revise');
+        Route::get('{application}/preview', [OfferingLetterController::class, 'preview'])->name('offering.preview');
+    });
+
+    Route::prefix('hr/pkwt')->group(function () {
+        Route::get('{application}', [PkwtController::class, 'show'])->name('pkwt.show');
+        Route::post('{application}', [PkwtController::class, 'store'])->name('pkwt.store');
+        Route::put('{application}', [PkwtController::class, 'update'])->name('pkwt.update');
+        Route::post('{application}/send', [PkwtController::class, 'send'])->name('pkwt.send');
+        Route::get('{application}/preview', [PkwtController::class, 'preview'])->name('pkwt.preview');
     });
 
     Route::prefix('hr/interview-hr')->group(function () {

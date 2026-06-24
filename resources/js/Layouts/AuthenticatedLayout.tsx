@@ -277,6 +277,11 @@ function getMenuItemsByRole(role: string): MenuItem[] {
                     icon: <Network className="h-4 w-4" />,
                 },
                 {
+                    label: 'DocuSeal',
+                    href: '/admin/docuseal',
+                    icon: <FolderCog className="h-4 w-4" />,
+                },
+                {
                     label: 'CMS Portal',
                     href: '/admin/cms',
                     icon: <FolderCog className="h-4 w-4" />,

@@ -37,6 +37,9 @@ class ApplicationResource extends JsonResource
             'psycho_test' => new PsychoTestResource($this->whenLoaded('psychoTest')),
             'hr_interview' => new HrInterviewResource($this->whenLoaded('hrInterview')),
             'user_interview' => new UserInterviewResource($this->whenLoaded('userInterview')),
+            'background_check' => $this->whenLoaded('backgroundCheck'),
+            'offering_letter' => $this->whenLoaded('offeringLetter'),
+            'pkwt_contract' => $this->whenLoaded('pkwtContract'),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
