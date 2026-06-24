@@ -1,0 +1,151 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\ApprovalChain;
+use App\Models\Department;
+use App\Models\Entity;
+use App\Models\RecruitmentRequest;
+use App\Models\User;
+use App\Support\Roles;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
+use Tests\TestCase;
+
+class FpkWorkflowTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private Entity $entity;
+
+    private Department $department;
+
+    private User $requester;
+
+    private User $approver;
+
+    private User $hrManager;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        foreach (Roles::all() as $role) {
+            Role::findOrCreate($role, 'web');
+        }
+
+        Mail::fake();
+
+        $this->entity = Entity::factory()->create();
+        $this->department = Department::factory()->for($this->entity)->create();
+        $this->requester = User::factory()->for($this->department)->create(['is_active' => true]);
+        $this->requester->assignRole(Roles::HiringManager);
+        $this->approver = User::factory()->for($this->department)->create(['is_active' => true]);
+        $this->approver->assignRole(Roles::Approver);
+        $this->hrManager = User::factory()->for($this->department)->create(['is_active' => true]);
+        $this->hrManager->assignRole(Roles::HrManager);
+
+        ApprovalChain::factory()->for($this->department)->create([
+            'level' => 1,
+            'type' => 'user',
+            'approver_user_id' => $this->approver->id,
+            'approver_role' => null,
+        ]);
+
+        ApprovalChain::factory()->for($this->department)->create([
+            'level' => 2,
+            'type' => 'role',
+            'approver_user_id' => null,
+            'approver_role' => Roles::HrManager,
+        ]);
+    }
+
+    public function test_fpk_draft_submit_approve_all_levels_becomes_approved(): void
+    {
+        $fpk = $this->createFpk();
+
+        $this->actingAs($this->requester)->postJson(route('fpk.submit', $fpk))->assertNoContent();
+        $this->assertSame('in_approval', $fpk->refresh()->status);
+        $this->assertSame(1, $fpk->current_approval_level);
+
+        $this->actingAs($this->approver)->postJson(route('fpk.approve', $fpk), ['comment' => 'OK'])->assertNoContent();
+        $this->assertSame('in_approval', $fpk->refresh()->status);
+        $this->assertSame(2, $fpk->current_approval_level);
+
+        $this->actingAs($this->hrManager)->postJson(route('fpk.approve', $fpk), ['comment' => 'Final OK'])->assertNoContent();
+        $this->assertSame('approved', $fpk->refresh()->status);
+        $this->assertNull($fpk->current_approval_level);
+        $this->assertSame(['approved', 'approved'], $fpk->approvalRecords()->orderBy('level')->pluck('action')->all());
+    }
+
+    public function test_fpk_draft_submit_reject_saves_comment_and_rejected_status(): void
+    {
+        $fpk = $this->submittedFpk();
+
+        $this->actingAs($this->approver)->postJson(route('fpk.reject', $fpk), ['comment' => 'Budget belum tersedia'])->assertNoContent();
+
+        $this->assertSame('rejected', $fpk->refresh()->status);
+        $this->assertDatabaseHas('approval_records', [
+            'recruitment_request_id' => $fpk->id,
+            'level' => 1,
+            'action' => 'rejected',
+            'comment' => 'Budget belum tersedia',
+        ]);
+    }
+
+    public function test_fpk_need_revision_returns_to_requester(): void
+    {
+        $fpk = $this->submittedFpk();
+
+        $this->actingAs($this->approver)->postJson(route('fpk.need-revision', $fpk), ['comment' => 'Lengkapi kualifikasi'])->assertNoContent();
+
+        $this->assertSame('need_revision', $fpk->refresh()->status);
+        $this->assertNull($fpk->current_approval_level);
+    }
+
+    public function test_unauthorized_actor_cannot_approve_current_level(): void
+    {
+        $fpk = $this->submittedFpk();
+        $otherApprover = User::factory()->for($this->department)->create(['is_active' => true]);
+        $otherApprover->assignRole(Roles::Approver);
+
+        $this->actingAs($otherApprover)->postJson(route('fpk.approve', $fpk), ['comment' => 'OK'])->assertUnprocessable();
+
+        $this->assertSame('in_approval', $fpk->refresh()->status);
+    }
+
+    public function test_reject_without_comment_is_rejected_by_validation(): void
+    {
+        $fpk = $this->submittedFpk();
+
+        $this->actingAs($this->approver)->postJson(route('fpk.reject', $fpk), [])->assertUnprocessable()->assertJsonValidationErrors('comment');
+
+        $this->assertSame('in_approval', $fpk->refresh()->status);
+    }
+
+    private function createFpk(): RecruitmentRequest
+    {
+        $payload = RecruitmentRequest::factory()->make([
+            'entity_id' => $this->entity->id,
+            'department_id' => $this->department->id,
+            'requester_id' => $this->requester->id,
+        ])->toArray();
+
+        unset($payload['requester_id'], $payload['status'], $payload['current_approval_level']);
+
+        $response = $this->actingAs($this->requester)->postJson(route('fpk.store'), $payload)->assertCreated();
+
+        return RecruitmentRequest::query()->findOrFail($response->json('data.id'));
+    }
+
+    private function submittedFpk(): RecruitmentRequest
+    {
+        $fpk = $this->createFpk();
+        $this->actingAs($this->requester)->postJson(route('fpk.submit', $fpk))->assertNoContent();
+
+        return $fpk->refresh();
+    }
+}
