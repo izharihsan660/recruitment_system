@@ -16,15 +16,20 @@ use App\Http\Controllers\CandidateDocumentController;
 use App\Http\Controllers\CandidatePortalController;
 use App\Http\Controllers\DocuSealWebhookController;
 use App\Http\Controllers\EmailIntakeController;
+use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\FpkController;
+use App\Http\Controllers\HiringDecisionController;
 use App\Http\Controllers\HrCandidateInputController;
 use App\Http\Controllers\HrInterviewController;
 use App\Http\Controllers\JobPostingController;
+use App\Http\Controllers\McuSimperController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OfferingLetterController;
 use App\Http\Controllers\PipelineController;
 use App\Http\Controllers\PkwtController;
 use App\Http\Controllers\PortalController;
+use App\Http\Controllers\PreboardingController;
+use App\Http\Controllers\ProbationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PsychoTestController;
 use App\Http\Controllers\ScreeningController;
@@ -41,6 +46,7 @@ use App\Models\EmailIntake;
 use App\Models\Entity;
 use App\Models\GraphApiConfig;
 use App\Models\JobPosting;
+use App\Models\ProbationRecord;
 use App\Models\RecruitmentRequest;
 use App\Models\SmtpSetting;
 use App\Models\TalentPool;
@@ -82,8 +88,11 @@ Route::get('/dashboard', function (Request $request) {
             'kandidat_pipeline' => (clone $pipelineQuery)->count(),
             'hired_bulan_ini' => CandidateApplication::query()->where('status', 'hired')->whereMonth('updated_at', now()->month)->whereYear('updated_at', now()->year)->count(),
             'ukuran_talent_pool' => TalentPool::query()->count(),
-            'probation_berjalan' => 0,
-            'probation_jatuh_tempo' => 0,
+            'probation_berjalan' => ProbationRecord::query()->whereIn('status', ['in_progress', 'day30_review', 'day60_review', 'day90_review', 'extended'])->count(),
+            'probation_jatuh_tempo' => ProbationRecord::query()->whereIn('status', ['in_progress', 'day30_review', 'day60_review', 'day90_review', 'extended'])->where(function ($query) {
+                $date = now()->addDays(7)->toDateString();
+                $query->whereDate('day30_due', '<=', $date)->orWhereDate('day60_due', '<=', $date)->orWhereDate('day90_due', '<=', $date)->orWhereDate('extended_until', '<=', $date);
+            })->count(),
         ]
         : [
             'fpk_saya' => (clone $fpkQuery)->where('requester_id', $user?->id)->count(),
@@ -338,6 +347,45 @@ Route::middleware(['auth', 'active', 'role:'.Roles::HrRecruiter.'|'.Roles::HrMan
         Route::put('{application}', [PkwtController::class, 'update'])->name('pkwt.update');
         Route::post('{application}/send', [PkwtController::class, 'send'])->name('pkwt.send');
         Route::get('{application}/preview', [PkwtController::class, 'preview'])->name('pkwt.preview');
+    });
+
+    Route::prefix('hr/mcu-simper')->group(function () {
+        Route::get('{application}', [McuSimperController::class, 'show'])->name('mcu-simper.show');
+        Route::post('{application}', [McuSimperController::class, 'store'])->name('mcu-simper.store');
+        Route::post('{application}/schedule-mcu', [McuSimperController::class, 'scheduleMcu'])->name('mcu-simper.schedule-mcu');
+        Route::post('{application}/schedule-simper', [McuSimperController::class, 'scheduleSimper'])->name('mcu-simper.schedule-simper');
+        Route::post('{application}/result-mcu', [McuSimperController::class, 'resultMcu'])->name('mcu-simper.result-mcu');
+        Route::post('{application}/result-simper', [McuSimperController::class, 'resultSimper'])->name('mcu-simper.result-simper');
+        Route::post('{application}/proceed', [McuSimperController::class, 'proceed'])->name('mcu-simper.proceed');
+    });
+
+    Route::prefix('hr/hiring-decision')->group(function () {
+        Route::get('{application}', [HiringDecisionController::class, 'show'])->name('hiring-decision.show');
+        Route::post('{application}', [HiringDecisionController::class, 'store'])->name('hiring-decision.store');
+    });
+
+    Route::prefix('hr/employees')->group(function () {
+        Route::get('', [EmployeeController::class, 'index'])->name('employees.index');
+        Route::get('{employee}', [EmployeeController::class, 'show'])->name('employees.show');
+        Route::get('{application}/activate', [EmployeeController::class, 'activate'])->name('employees.activate');
+        Route::post('{application}/activate', [EmployeeController::class, 'store'])->name('employees.store');
+        Route::put('{employee}', [EmployeeController::class, 'update'])->name('employees.update');
+    });
+
+    Route::prefix('hr/preboarding')->group(function () {
+        Route::get('', [PreboardingController::class, 'index'])->name('preboarding.index');
+        Route::get('{employee}', [PreboardingController::class, 'show'])->name('preboarding.show');
+        Route::post('{checklist}/items', [PreboardingController::class, 'storeItem'])->name('preboarding.items.store');
+        Route::delete('items/{item}', [PreboardingController::class, 'destroyItem'])->name('preboarding.items.destroy');
+        Route::post('items/{item}/assign', [PreboardingController::class, 'assign'])->name('preboarding.items.assign');
+        Route::post('items/{item}/complete', [PreboardingController::class, 'complete'])->name('preboarding.items.complete');
+    });
+
+    Route::prefix('hr/probation')->group(function () {
+        Route::get('', [ProbationController::class, 'index'])->name('probation.index');
+        Route::get('{employee}', [ProbationController::class, 'show'])->name('probation.show');
+        Route::post('{probation}/evaluate', [ProbationController::class, 'evaluate'])->name('probation.evaluate');
+        Route::post('{probation}/outcome', [ProbationController::class, 'outcome'])->name('probation.outcome');
     });
 
     Route::prefix('hr/interview-hr')->group(function () {

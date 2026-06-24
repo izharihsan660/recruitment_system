@@ -18,6 +18,7 @@ interface KpiCardItem {
     changeText?: string;
     icon: JSX.Element;
     highlightDanger?: boolean;
+    href?: string;
 }
 
 const mockHrKpis: KpiCardItem[] = [
@@ -88,13 +89,17 @@ const mockHiringManagerKpis: KpiCardItem[] = [
     },
 ];
 
-export default function Dashboard(): JSX.Element {
+export default function Dashboard({ kpis }: { kpis: Record<string, number> }): JSX.Element {
     const { auth } = usePage<PageProps>().props;
 
     const role = auth.user?.roles?.[0] ?? '';
 
     const isHrRole = role === 'hr_recruiter' || role === 'hr_manager' || role === 'admin';
-    const cards = isHrRole ? mockHrKpis : mockHiringManagerKpis;
+    const cards = (isHrRole ? mockHrKpis : mockHiringManagerKpis).map((card) => ({
+        ...card,
+        value: kpis?.[toKpiKey(card.label)] ?? card.value,
+        href: card.label.startsWith('Probation') ? '/hr/probation' : undefined,
+    }));
 
     return (
         <AuthenticatedLayout header={<h1 className="text-lg font-semibold text-slate-900">Dashboard</h1>}>
@@ -110,7 +115,7 @@ export default function Dashboard(): JSX.Element {
 }
 
 function KpiCard({ item }: { item: KpiCardItem }): JSX.Element {
-    return (
+    const body = (
         <article
             className={`rounded-lg border bg-white p-4 shadow-sm ${
                 item.highlightDanger ? 'border-red-300' : 'border-slate-200'
@@ -136,4 +141,18 @@ function KpiCard({ item }: { item: KpiCardItem }): JSX.Element {
             </div>
         </article>
     );
+
+    return item.href ? <a href={item.href}>{body}</a> : body;
+}
+
+function toKpiKey(label: string): string {
+    if (label === 'Probation Berjalan') {
+        return 'probation_berjalan';
+    }
+
+    if (label === 'Probation Jatuh Tempo ≤ 7 Hari') {
+        return 'probation_jatuh_tempo';
+    }
+
+    return label.toLowerCase().replace('≤ 7 hari', 'jatuh tempo').replace(/[()]/g, '').replace(/\s+/g, '_');
 }

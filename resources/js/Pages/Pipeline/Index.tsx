@@ -383,7 +383,10 @@ function PipelineStageActions({ application }: { application: ApplicationItem })
         interview_user: { href: `/hr/interview-user/${application.id}`, labels: application.user_interview?.id ? ['Isi Scorecard'] : ['Jadwalkan Interview User'] },
         background_check: { href: `/hr/background-check/${application.id}`, labels: ['Isi Background Check'] },
         offering: { href: `/hr/offering/${application.id}`, labels: [application.offering_letter?.id ? 'Lihat Offering' : 'Buat Offering'] },
+        mcu_simper: { href: `/hr/mcu-simper/${application.id}`, labels: ['Input MCU/SIMPER'] },
+        hiring_decision: { href: `/hr/hiring-decision/${application.id}`, labels: ['Input Keputusan'] },
         pkwt: { href: `/hr/pkwt/${application.id}`, labels: [application.pkwt_contract?.id ? 'Lihat PKWT' : 'Buat PKWT'] },
+        hired: { href: `/hr/employees/${application.id}/activate`, labels: ['Aktifkan sebagai Karyawan'] },
     };
 
     const action = application.status ? actions[application.status] : null;

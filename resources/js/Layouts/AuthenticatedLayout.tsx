@@ -327,6 +327,21 @@ function getMenuItemsByRole(role: string): MenuItem[] {
             href: '/hr/talent-pool',
             icon: <Users className="h-4 w-4" />,
         },
+        {
+            label: 'Karyawan Aktif',
+            href: '/hr/employees',
+            icon: <Users className="h-4 w-4" />,
+        },
+        {
+            label: 'Pre-boarding',
+            href: '/hr/preboarding',
+            icon: <ClipboardList className="h-4 w-4" />,
+        },
+        {
+            label: 'Probation',
+            href: '/hr/probation',
+            icon: <ClipboardList className="h-4 w-4" />,
+        },
     ];
 
     const hiringManagerMenus: MenuItem[] = [
@@ -345,6 +360,11 @@ function getMenuItemsByRole(role: string): MenuItem[] {
             label: 'Pipeline Kandidat',
             href: '/pipeline',
             icon: <Workflow className="h-4 w-4" />,
+        },
+        {
+            label: 'Probation',
+            href: '/hr/probation',
+            icon: <ClipboardList className="h-4 w-4" />,
         },
     ];
 

@@ -1,0 +1,4 @@
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { Head, Link } from '@inertiajs/react';
+
+export default function Index({ employees }: { employees: any }): JSX.Element { const rows = employees.data ?? employees; return <AuthenticatedLayout header={<h1 className="text-lg font-semibold">Karyawan Aktif</h1>}><Head title="Karyawan Aktif" /><div className="rounded-lg border bg-white"><table className="w-full text-sm"><tbody>{rows.map((employee: any) => <tr key={employee.id} className="border-b"><td className="p-3"><Link className="font-medium text-blue-600" href={`/hr/employees/${employee.id}`}>{employee.full_name}</Link><p className="text-slate-500">{employee.position_name}</p></td><td className="p-3">{employee.department?.name}</td><td className="p-3">{employee.status}</td></tr>)}</tbody></table></div></AuthenticatedLayout>; }

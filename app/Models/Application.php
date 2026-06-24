@@ -94,6 +94,21 @@ class Application extends Model
         return $this->hasOne(PkwtContract::class);
     }
 
+    public function mcuSimperRecord(): HasOne
+    {
+        return $this->hasOne(McuSimperRecord::class);
+    }
+
+    public function hiringDecision(): HasOne
+    {
+        return $this->hasOne(HiringDecision::class);
+    }
+
+    public function employee(): HasOne
+    {
+        return $this->hasOne(Employee::class);
+    }
+
     public function documents(): HasMany
     {
         return $this->hasMany(CandidateDocument::class);
