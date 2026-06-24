@@ -1,4 +1,4 @@
-import { HTMLAttributes, ReactNode } from 'react';
+import { forwardRef, HTMLAttributes, ReactNode } from 'react';
 
 export function PageHeader({ title, description, actions }: { title: string; description?: string; actions?: ReactNode }): JSX.Element {
     return (
@@ -12,9 +12,19 @@ export function PageHeader({ title, description, actions }: { title: string; des
     );
 }
 
-export function Card({ children, className = '', ...props }: HTMLAttributes<HTMLDivElement> & { children: ReactNode }): JSX.Element {
-    return <div {...props} className={`rounded-lg border border-slate-200 bg-white shadow-sm ${className}`}>{children}</div>;
-}
+export const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement> & { children: ReactNode }>(
+    ({ children, className = '', ...props }, ref) => (
+        <div
+            ref={ref}
+            {...props}
+            className={`rounded-lg border border-slate-200 bg-white shadow-sm ${className}`}
+        >
+            {children}
+        </div>
+    ),
+);
+
+Card.displayName = 'Card';
 
 export function Button({ children, variant = 'primary', className = '', ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'danger' | 'ghost' }): JSX.Element {
     const variants = {
