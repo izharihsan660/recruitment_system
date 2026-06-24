@@ -92,11 +92,37 @@ export interface Candidate {
     cv_path?: string | null;
     cv_original_name?: string | null;
     has_cv?: boolean;
+    updated_at?: string;
+    address?: string | null;
+    birth_date?: string | null;
+    gender?: string | null;
+    education?: EducationItem[] | null;
+    experience?: ExperienceItem[] | null;
+}
+
+export interface EducationItem {
+    degree: string;
+    major: string;
+    institution: string;
+    year: number | string;
+}
+
+export interface ExperienceItem {
+    company: string;
+    position: string;
+    start_year: number | string;
+    end_year?: number | string | null;
+    description?: string | null;
 }
 
 export interface ApplicationItem {
     id: number;
+    job_posting_id?: number;
     status?: string;
+    status_label?: string;
+    rejection_reason?: string | null;
+    rejection_stage?: string | null;
+    withdrawn_at?: string | null;
     source?: string | null;
     source_id?: number | null;
     created_at?: string;

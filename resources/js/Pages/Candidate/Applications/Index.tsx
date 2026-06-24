@@ -1,0 +1,10 @@
+import { Head, Link, router } from '@inertiajs/react';
+import CandidateLayout from '@/Layouts/CandidateLayout';
+import { Badge, Button, Card, EmptyState, PageHeader, SelectInput } from '@/Components/shared/ui';
+import { ApplicationItem, formatDate, Paginated } from '@/lib/recruitment';
+
+export default function ApplicationsIndex({ applications, filters }: { applications: Paginated<ApplicationItem>; filters: { status?: string } }): JSX.Element {
+    const statuses = ['', 'applied', 'screening', 'interview_hr', 'background_check', 'offering', 'hired', 'rejected', 'withdrawn'];
+    function changeStatus(status: string): void { router.get('/candidate/applications', status ? { status } : {}, { preserveState: true }); }
+    return <CandidateLayout><Head title="Lamaran Saya" /><PageHeader title="Lamaran Saya" description="Pantau semua lamaran yang pernah Anda kirim." /><Card className="p-5"><div className="mb-4 max-w-xs"><SelectInput value={filters.status ?? ''} onChange={(event) => changeStatus(event.target.value)}>{statuses.map((status) => <option key={status} value={status}>{status ? status.replaceAll('_', ' ') : 'Semua Status'}</option>)}</SelectInput></div>{applications.data.length === 0 ? <EmptyState title="Tidak ada lamaran" description="Belum ada lamaran untuk filter ini." /> : <div className="overflow-x-auto"><table className="min-w-full divide-y text-sm"><thead><tr className="text-left text-slate-500"><th className="py-3">Posisi</th><th>PT</th><th>Tanggal Apply</th><th>Status</th><th>Aksi</th></tr></thead><tbody className="divide-y">{applications.data.map((application) => <tr key={application.id}><td className="py-3 font-medium">{application.job_posting?.position_name}</td><td>{application.job_posting?.entity?.name ?? '-'}</td><td>{formatDate(application.created_at)}</td><td><Badge tone="blue">{application.status_label ?? 'Lamaran Sedang Diproses'}</Badge></td><td><Link href={`/candidate/applications/${application.id}`}><Button type="button" variant="secondary">Lihat Detail</Button></Link></td></tr>)}</tbody></table></div>}</Card></CandidateLayout>;
+}

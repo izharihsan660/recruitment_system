@@ -283,28 +283,33 @@ Route::middleware(['auth', 'active', 'role:'.Roles::HrRecruiter.'|'.Roles::HrMan
 });
 
 Route::prefix('candidate')->name('candidate.')->group(function () {
+    Route::get('register', [CandidateAuthController::class, 'showRegister'])->middleware('guest:candidate')->name('register.form');
     Route::post('register', [CandidateAuthController::class, 'register'])->name('register');
+    Route::get('login', [CandidateAuthController::class, 'showLogin'])->middleware('guest:candidate')->name('login.form');
     Route::post('login', [CandidateAuthController::class, 'login'])->name('login');
+    Route::get('forgot-password', [CandidateAuthController::class, 'showForgotPassword'])->middleware('guest:candidate')->name('password.request');
+    Route::post('forgot-password', [CandidateAuthController::class, 'sendResetLink'])->middleware('guest:candidate')->name('password.email');
+    Route::get('reset-password/{token}', [CandidateAuthController::class, 'showResetPassword'])->middleware('guest:candidate')->name('password.reset');
+    Route::post('reset-password', [CandidateAuthController::class, 'resetPassword'])->middleware('guest:candidate')->name('password.update');
 
     Route::middleware('auth:candidate')->group(function () {
         Route::post('logout', [CandidateAuthController::class, 'logout'])->name('logout');
+        Route::get('dashboard', [CandidateAuthController::class, 'dashboard'])->name('dashboard');
         Route::get('profile', [CandidateAuthController::class, 'profile'])->name('profile');
         Route::put('profile', [CandidateAuthController::class, 'updateProfile'])->name('profile.update');
         Route::post('cv', [CandidateAuthController::class, 'uploadCv'])->name('cv.store');
-        Route::get('jobs', [CandidatePortalController::class, 'jobs'])->name('jobs.index');
-        Route::get('jobs/{job_posting}', [CandidatePortalController::class, 'job'])->name('jobs.show');
+        Route::get('jobs/{job_posting}/apply', [CandidatePortalController::class, 'applyForm'])->name('jobs.apply.form');
         Route::post('jobs/{job_posting}/apply', [CandidatePortalController::class, 'apply'])->name('jobs.apply');
         Route::post('jobs/{job_posting}/withdraw', [CandidatePortalController::class, 'withdraw'])->name('jobs.withdraw');
         Route::get('applications', [CandidatePortalController::class, 'applications'])->name('applications.index');
         Route::get('applications/{application}', [CandidatePortalController::class, 'application'])->name('applications.show');
         Route::post('applications/{application}/documents', [CandidateDocumentController::class, 'store'])->name('applications.documents.store');
-        Route::get('applications/{application}/documents', [CandidateDocumentController::class, 'index'])->name('applications.documents.index');
         Route::delete('applications/{application}/documents/{docId}', [CandidateDocumentController::class, 'destroy'])->name('applications.documents.destroy');
     });
 });
 
 Route::prefix('portal')->name('portal.')->group(function () {
-    Route::get('company-profile', [PortalController::class, 'companyProfile'])->name('company-profile.show');
+    Route::get('/', [PortalController::class, 'home'])->name('home');
     Route::get('jobs', [PortalController::class, 'jobs'])->name('jobs.index');
     Route::get('jobs/{job_posting}', [PortalController::class, 'job'])->name('jobs.show');
 });

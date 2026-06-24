@@ -1,0 +1,11 @@
+@extends('layouts.portal')
+@section('title', ($job->position_name ?: 'Lowongan').' — '.($companyProfile?->company_name ?: config('app.name')))
+@section('meta_description', Str::limit(strip_tags((string) $job->job_description), 160, ''))
+@section('canonical', route('portal.jobs.show', $job))
+@section('content')
+<section class="bg-white"><div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8"><p class="text-sm font-semibold text-blue-600">{{ $job->department?->name ?: 'Departemen' }}</p><h1 class="mt-2 text-3xl font-bold">{{ $job->position_name }}</h1><div class="mt-4 flex flex-wrap gap-3 text-sm text-slate-600"><span>{{ $job->entity?->name ?: '-' }}</span><span>•</span><span>{{ $job->work_location ?: '-' }}</span><span>•</span><span>{{ $job->employment_status ?: '-' }}</span><span>•</span><span>Dibuka {{ $job->opened_at?->translatedFormat('d M Y') ?: $job->created_at?->translatedFormat('d M Y') }}</span></div></div></section>
+<section class="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_320px] lg:px-8">
+    <article class="space-y-8 rounded-xl border bg-white p-6 shadow-sm"><div><h2 class="text-xl font-semibold">Deskripsi Pekerjaan</h2><div class="prose prose-slate mt-3 max-w-none whitespace-pre-line text-slate-600">{{ $job->job_description }}</div></div><div><h2 class="text-xl font-semibold">Persyaratan</h2><div class="prose prose-slate mt-3 max-w-none whitespace-pre-line text-slate-600">{{ $job->requirements }}</div></div></article>
+    <aside><div class="sticky top-24 rounded-xl border bg-white p-6 shadow-sm"><h2 class="font-semibold">Info Lowongan</h2><dl class="mt-4 space-y-3 text-sm"><div><dt class="text-slate-500">PT</dt><dd class="font-medium">{{ $job->entity?->name ?: '-' }}</dd></div><div><dt class="text-slate-500">Lokasi</dt><dd class="font-medium">{{ $job->work_location ?: '-' }}</dd></div><div><dt class="text-slate-500">Tipe Kontrak</dt><dd class="font-medium">{{ $job->employment_status ?: '-' }}</dd></div></dl><a href="{{ auth('candidate')->check() ? route('candidate.jobs.apply.form', $job) : route('candidate.login.form') }}" class="mt-6 flex w-full justify-center rounded-md bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700">Lamar Sekarang</a></div></aside>
+</section>
+@endsection

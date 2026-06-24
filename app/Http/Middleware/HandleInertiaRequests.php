@@ -30,7 +30,8 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        $user = $request->user();
+        $user = $request->user('web');
+        $candidate = $request->user('candidate');
 
         return [
             ...parent::share($request),
@@ -41,6 +42,13 @@ class HandleInertiaRequests extends Middleware
                     'email' => $user->email,
                     'department_id' => $user->department_id,
                     'roles' => $user->getRoleNames()->values()->all(),
+                ] : null,
+                'candidate' => $candidate ? [
+                    'id' => $candidate->id,
+                    'name' => $candidate->name,
+                    'email' => $candidate->email,
+                    'phone' => $candidate->phone,
+                    'has_cv' => $candidate->hasCv(),
                 ] : null,
             ],
             'unread_notifications_count' => fn (): int => $user

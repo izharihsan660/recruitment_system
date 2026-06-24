@@ -10,6 +10,8 @@ class CandidateAuthService
 {
     public function register(array $data): Candidate
     {
+        unset($data['consent']);
+
         return Candidate::query()->create($data);
     }
 

@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class CandidateRegisterRequest extends FormRequest
@@ -18,6 +19,7 @@ class CandidateRegisterRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:candidates,email'],
             'password' => ['required', 'confirmed', Password::min(8)],
+            'consent' => [Rule::excludeIf($this->expectsJson()), 'required', 'accepted'],
         ];
     }
 }

@@ -22,6 +22,13 @@ export type PageProps<
 > = T & {
     auth: {
         user: User;
+        candidate?: {
+            id: number;
+            name: string;
+            email: string;
+            phone?: string | null;
+            has_cv?: boolean;
+        } | null;
     };
     unread_notifications_count?: number;
     latest_notifications?: InAppNotification[];
