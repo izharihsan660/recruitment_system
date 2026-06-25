@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, MouseEvent, useState } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
 
 import { Button, Card, FieldError, FormLabel, PageHeader, SelectInput, TextArea, TextInput } from '@/Components/shared/ui';
@@ -106,9 +106,7 @@ export default function FpkForm({ mode, fpk, entities, departments }: { mode: 'c
         }
     }
 
-    function submit(event: FormEvent, shouldSubmit = false): void {
-        event.preventDefault();
-
+    function submit(_event: MouseEvent | FormEvent, shouldSubmit = false): void {
         if (mode === 'edit' && fpk) {
             router.put(`/fpk/${fpk.id}`, payload(), {
                 onError: handleErrors,
@@ -148,7 +146,7 @@ export default function FpkForm({ mode, fpk, entities, departments }: { mode: 'c
                         </button>
                     ))}
                 </div>
-                <form onSubmit={(event) => submit(event)} className="space-y-4">
+                <form onSubmit={(event) => event.preventDefault()} className="space-y-4">
                     {step === 0 && (
                         <div className="grid gap-4 md:grid-cols-2">
                             <div><FormLabel required>PT</FormLabel><SelectInput value={form.data.entity_id} onChange={(event) => form.setData('entity_id', event.target.value)}><option value="">Pilih PT</option>{entities.map((entity) => <option key={entity.id} value={entity.id}>{entity.name}</option>)}</SelectInput><FieldError message={form.errors.entity_id} /></div>
@@ -201,7 +199,7 @@ export default function FpkForm({ mode, fpk, entities, departments }: { mode: 'c
                     <div className="flex justify-between pt-4">
                         <Button type="button" variant="secondary" disabled={step === 0} onClick={() => setStep((current) => Math.max(0, current - 1))}>Sebelumnya</Button>
                         <div className="space-x-2">
-                            {step < steps.length - 1 ? <Button type="button" onClick={() => setStep((current) => current + 1)}>Lanjut</Button> : <><Button type="submit" variant="secondary">Simpan Draft</Button><Button type="button" onClick={(event) => submit(event, true)}>Simpan & Submit</Button></>}
+                            {step < steps.length - 1 ? <Button type="button" onClick={() => setStep((current) => current + 1)}>Lanjut</Button> : <><Button type="button" variant="secondary" onClick={(event) => submit(event)}>Simpan Draft</Button><Button type="button" onClick={(event) => submit(event, true)}>Simpan & Submit</Button></>}
                         </div>
                     </div>
                 </form>

@@ -60,7 +60,7 @@ export default function Show({ employee, probation }: { employee: EmployeePayloa
                             <option value="extended">Perpanjang</option>
                             <option value="terminated">Terminasi</option>
                         </select>
-                        <button className="rounded bg-blue-600 px-3 py-2 text-white">Isi Evaluasi</button>
+                        <button type="submit" className="rounded bg-blue-600 px-3 py-2 text-white">Isi Evaluasi</button>
                     </form>
                 )}
                 {canSubmitOutcome && (
@@ -71,7 +71,7 @@ export default function Show({ employee, probation }: { employee: EmployeePayloa
                             <option value="terminated">Terminasi</option>
                         </select>
                         {outcomeForm.data.outcome === 'extended' && <input type="date" className="rounded border p-2" onChange={(event) => outcomeForm.setData('extended_until', event.target.value)} />}
-                        <button className="rounded bg-green-600 px-3 py-2 text-white">Submit Outcome</button>
+                        <button type="submit" className="rounded bg-green-600 px-3 py-2 text-white">Submit Outcome</button>
                     </form>
                 )}
             </div>

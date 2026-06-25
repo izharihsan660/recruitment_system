@@ -24,7 +24,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Vite::prefetch(concurrency: 3);
 
-        View::composer('layouts.portal', function ($view): void {
+        View::composer(['layouts.portal', 'candidate.auth.*', 'layouts.candidate'], function ($view): void {
             $view->with('portalCompanyProfile', app(CompanyProfileService::class)->current());
         });
     }

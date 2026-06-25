@@ -35,7 +35,7 @@ export function Button({ children, variant = 'primary', className = '', ...props
     };
 
     return (
-        <button {...props} className={`inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed ${variants[variant]} ${className}`}>
+        <button type="button" {...props} className={`inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed ${variants[variant]} ${className}`}>
             {children}
         </button>
     );

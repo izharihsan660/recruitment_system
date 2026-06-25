@@ -47,7 +47,7 @@ export default function Pkwt({ application }: { application: ApplicationItem }):
                             </div>
                             <div className="flex items-end gap-2 md:col-span-2">
                                 <a className="rounded-md bg-slate-100 px-3 py-2 text-sm" href={`/hr/pkwt/${application.id}/preview`} target="_blank">Preview PDF</a>
-                                <Button disabled={form.processing}>{form.processing ? 'Menyimpan...' : 'Simpan'}</Button>
+                                <Button type="submit" disabled={form.processing}>{form.processing ? 'Menyimpan...' : 'Simpan'}</Button>
                                 {isDraft && <Button type="button" onClick={send}>Kirim untuk Ditandatangani</Button>}
                             </div>
                         </form>

@@ -57,7 +57,7 @@ function Section({ type, title, application, record }: { type: SectionType; titl
                         <form onSubmit={submitSchedule} className="space-y-2">
                             <input type="datetime-local" className="w-full rounded border p-2" onChange={(event) => schedule.setData(`${type}_scheduled_at` as any, event.target.value)} />
                             <input className="w-full rounded border p-2" placeholder="Lokasi" onChange={(event) => schedule.setData(`${type}_location` as any, event.target.value)} />
-                            <button disabled={schedule.processing} className="rounded bg-blue-600 px-3 py-2 text-sm text-white">Simpan & Kirim Notifikasi</button>
+                            <button type="submit" disabled={schedule.processing} className="rounded bg-blue-600 px-3 py-2 text-sm text-white">Simpan & Kirim Notifikasi</button>
                         </form>
                     )}
                     <p className="text-sm text-slate-500">Jadwal: {record?.[`${type}_scheduled_at`] ?? '-'} di {record?.[`${type}_location`] ?? '-'}</p>
@@ -70,7 +70,7 @@ function Section({ type, title, application, record }: { type: SectionType; titl
                             </select>
                             <textarea className="w-full rounded border p-2" placeholder="Catatan" onChange={(event) => result.setData('notes', event.target.value)} />
                             {result.data.status === 'failed' && <textarea className="w-full rounded border p-2" placeholder="Alasan penolakan" onChange={(event) => result.setData('rejection_reason', event.target.value)} />}
-                            <button disabled={result.processing} className="rounded bg-blue-600 px-3 py-2 text-sm text-white">Upload</button>
+                            <button type="submit" disabled={result.processing} className="rounded bg-blue-600 px-3 py-2 text-sm text-white">Upload</button>
                         </form>
                     )}
                 </div>
