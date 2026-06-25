@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             DepartmentSeeder::class,
             CandidateSourceSeeder::class,
             CompanyProfileSeeder::class,
+            DemoSeeder::class,
         ]);
 
         DocusealConfig::query()->firstOrCreate(

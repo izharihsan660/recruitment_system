@@ -35,6 +35,7 @@ use App\Http\Controllers\PsychoTestController;
 use App\Http\Controllers\ScreeningController;
 use App\Http\Controllers\TalentPoolController;
 use App\Http\Controllers\UserInterviewController;
+use App\Http\Resources\ApplicationResource;
 use App\Models\Application as CandidateApplication;
 use App\Models\ApprovalChain;
 use App\Models\CandidateSource;
@@ -189,7 +190,23 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     Route::get('/pipeline', function () {
         return Inertia::render('Pipeline/Index', [
-            'applications' => CandidateApplication::query()->with(['candidate', 'jobPosting', 'screening', 'psychoTest', 'hrInterview', 'userInterview'])->latest()->get(),
+            'applications' => ApplicationResource::collection(
+                CandidateApplication::query()
+                    ->with([
+                        'candidate',
+                        'jobPosting',
+                        'screening',
+                        'psychoTest',
+                        'hrInterview',
+                        'userInterview',
+                        'backgroundCheck',
+                        'offeringLetter',
+                        'pkwtContract',
+                    ])
+                    ->whereNotIn('status', ['rejected', 'withdrawn'])
+                    ->latest()
+                    ->get()
+            ),
             'jobPostings' => JobPosting::query()->where('status', 'open')->orderBy('position_name')->get(['id', 'position_name']),
             'departments' => Department::query()->orderBy('name')->get(['id', 'name']),
             'sources' => CandidateSource::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
