@@ -8,8 +8,8 @@ use App\Http\Resources\JobPostingResource;
 use App\Models\JobPosting;
 use App\Models\RecruitmentRequest;
 use App\Services\JobPostingService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
 
 class JobPostingController extends Controller
@@ -23,12 +23,12 @@ class JobPostingController extends Controller
         return JobPostingResource::collection(JobPosting::query()->with(['entity', 'department', 'recruitmentRequest'])->latest()->paginate());
     }
 
-    public function store(StoreJobPostingRequest $request): JobPostingResource
+    public function store(StoreJobPostingRequest $request): RedirectResponse
     {
         $fpk = RecruitmentRequest::query()->findOrFail($request->integer('recruitment_request_id'));
-        $job = $this->jobPostingService->createFromFpk($fpk, $request->validated(), $request->user());
+        $this->jobPostingService->createFromFpk($fpk, $request->validated(), $request->user());
 
-        return new JobPostingResource($job->load(['entity', 'department', 'recruitmentRequest']));
+        return redirect()->back()->with('success', 'Job Posting berhasil dibuat.');
     }
 
     public function show(JobPosting $jobPosting): JobPostingResource
@@ -38,34 +38,34 @@ class JobPostingController extends Controller
         return new JobPostingResource($jobPosting->load(['entity', 'department', 'recruitmentRequest']));
     }
 
-    public function update(UpdateJobPostingRequest $request, JobPosting $jobPosting): JobPostingResource
+    public function update(UpdateJobPostingRequest $request, JobPosting $jobPosting): RedirectResponse
     {
-        $job = $this->jobPostingService->update($jobPosting, $request->validated());
+        $this->jobPostingService->update($jobPosting, $request->validated());
 
-        return new JobPostingResource($job->load(['entity', 'department', 'recruitmentRequest']));
+        return redirect()->back()->with('success', 'Job Posting berhasil diperbarui.');
     }
 
-    public function open(JobPosting $jobPosting): Response
+    public function open(JobPosting $jobPosting): RedirectResponse
     {
         Gate::authorize('update', $jobPosting);
         $this->jobPostingService->open($jobPosting, request()->user());
 
-        return response()->noContent();
+        return redirect()->back()->with('success', 'Aksi berhasil dijalankan.');
     }
 
-    public function close(JobPosting $jobPosting): Response
+    public function close(JobPosting $jobPosting): RedirectResponse
     {
         Gate::authorize('update', $jobPosting);
         $this->jobPostingService->close($jobPosting, request()->user());
 
-        return response()->noContent();
+        return redirect()->back()->with('success', 'Aksi berhasil dijalankan.');
     }
 
-    public function cancel(JobPosting $jobPosting): Response
+    public function cancel(JobPosting $jobPosting): RedirectResponse
     {
         Gate::authorize('update', $jobPosting);
         $this->jobPostingService->cancel($jobPosting, request()->user());
 
-        return response()->noContent();
+        return redirect()->back()->with('success', 'Aksi berhasil dijalankan.');
     }
 }

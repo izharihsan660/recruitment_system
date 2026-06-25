@@ -1,5 +1,62 @@
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import ConfirmDialog from '@/Components/ConfirmDialog';
 import { Badge, Button, Card, PageHeader } from '@/Components/shared/ui';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { ApplicationItem, humanize, JobPosting, jobStatusTone } from '@/lib/recruitment';
 import { Head, router } from '@inertiajs/react';
-export default function JobPostingShow({ jobPosting, applications }: { jobPosting: JobPosting; applications: ApplicationItem[] }): JSX.Element { const summary = applications.reduce<Record<string, number>>((carry, app) => ({ ...carry, [app.status ?? 'unknown']: (carry[app.status ?? 'unknown'] ?? 0) + 1 }), {}); return <AuthenticatedLayout header={<h1 className="text-lg font-semibold">Detail Lowongan</h1>}><Head title="Detail Lowongan" /><PageHeader title={jobPosting.position_name ?? 'Lowongan'} description={`${jobPosting.department?.name ?? '-'} • ${jobPosting.entity?.name ?? '-'}`} actions={<div className="flex gap-2"><Button onClick={() => router.post(`/job-postings/${jobPosting.id}/open`)}>Buka</Button><Button variant="secondary" onClick={() => router.post(`/job-postings/${jobPosting.id}/close`)}>Tutup</Button><Button variant="danger" onClick={() => confirm('Yakin cancel lowongan?') && router.post(`/job-postings/${jobPosting.id}/cancel`)}>Cancel</Button></div>} /><div className="grid gap-6 lg:grid-cols-[1fr_360px]"><Card className="p-6"><Badge tone={jobStatusTone(jobPosting.status)}>{humanize(jobPosting.status)}</Badge><h2 className="mt-4 font-semibold">Deskripsi</h2><p className="whitespace-pre-line text-sm text-slate-700">{jobPosting.job_description}</p><h2 className="mt-4 font-semibold">Persyaratan</h2><p className="whitespace-pre-line text-sm text-slate-700">{jobPosting.requirements}</p></Card><Card className="p-6"><h2 className="mb-4 font-semibold">Summary Kandidat per Stage</h2><div className="space-y-2">{Object.entries(summary).map(([stage, count]) => <div key={stage} className="flex justify-between rounded-md bg-slate-50 p-3 text-sm"><span>{humanize(stage)}</span><strong>{count}</strong></div>)}</div></Card></div></AuthenticatedLayout>; }
+import { useState } from 'react';
+
+type PendingAction = 'close' | 'cancel' | null;
+
+export default function JobPostingShow({ jobPosting, applications }: { jobPosting: JobPosting; applications: ApplicationItem[] }): JSX.Element {
+    const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+    const summary = applications.reduce<Record<string, number>>((carry, app) => ({ ...carry, [app.status ?? 'unknown']: (carry[app.status ?? 'unknown'] ?? 0) + 1 }), {});
+
+    function confirmAction(): void {
+        if (!pendingAction) {
+            return;
+        }
+
+        router.post(`/job-postings/${jobPosting.id}/${pendingAction}`, {}, { onFinish: () => setPendingAction(null) });
+    }
+
+    return (
+        <AuthenticatedLayout header={<h1 className="text-lg font-semibold">Detail Lowongan</h1>}>
+            <Head title="Detail Lowongan" />
+            <PageHeader
+                title={jobPosting.position_name ?? 'Lowongan'}
+                description={`${jobPosting.department?.name ?? '-'} • ${jobPosting.entity?.name ?? '-'}`}
+                actions={
+                    <div className="flex gap-2">
+                        <Button onClick={() => router.post(`/job-postings/${jobPosting.id}/open`)}>Buka</Button>
+                        <Button variant="secondary" onClick={() => setPendingAction('close')}>Tutup</Button>
+                        <Button variant="danger" onClick={() => setPendingAction('cancel')}>Cancel</Button>
+                    </div>
+                }
+            />
+            <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+                <Card className="p-6">
+                    <Badge tone={jobStatusTone(jobPosting.status)}>{humanize(jobPosting.status)}</Badge>
+                    <h2 className="mt-4 font-semibold">Deskripsi</h2>
+                    <p className="whitespace-pre-line text-sm text-slate-700">{jobPosting.job_description}</p>
+                    <h2 className="mt-4 font-semibold">Persyaratan</h2>
+                    <p className="whitespace-pre-line text-sm text-slate-700">{jobPosting.requirements}</p>
+                </Card>
+                <Card className="p-6">
+                    <h2 className="mb-4 font-semibold">Summary Kandidat per Stage</h2>
+                    <div className="space-y-2">
+                        {Object.entries(summary).map(([stage, count]) => <div key={stage} className="flex justify-between rounded-md bg-slate-50 p-3 text-sm"><span>{humanize(stage)}</span><strong>{count}</strong></div>)}
+                    </div>
+                </Card>
+            </div>
+            <ConfirmDialog
+                open={pendingAction !== null}
+                title={pendingAction === 'cancel' ? 'Cancel job posting?' : 'Tutup job posting?'}
+                message={pendingAction === 'cancel' ? 'Lowongan akan dibatalkan dan tidak diproses lagi.' : 'Lowongan akan ditutup dari proses rekrutmen aktif.'}
+                confirmLabel={pendingAction === 'cancel' ? 'Ya, Cancel' : 'Ya, Tutup'}
+                variant={pendingAction === 'cancel' ? 'danger' : 'warning'}
+                onConfirm={confirmAction}
+                onCancel={() => setPendingAction(null)}
+            />
+        </AuthenticatedLayout>
+    );
+}

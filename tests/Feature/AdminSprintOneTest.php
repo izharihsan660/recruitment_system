@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Department;
-use App\Models\Entity;
 use App\Models\GraphApiConfig;
 use App\Models\SmtpSetting;
 use App\Models\User;
@@ -47,13 +46,13 @@ class AdminSprintOneTest extends TestCase
         $admin = $this->adminUser();
 
         $this->actingAs($admin)
-            ->postJson('/admin/entities', [
+            ->post('/admin/entities', [
                 'name' => 'PT Nusantara Abadi Jaya',
                 'short_name' => 'NAJ',
                 'is_active' => true,
             ])
-            ->assertCreated()
-            ->assertJsonPath('data.short_name', 'NAJ');
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Entitas berhasil dibuat.');
 
         $this->assertDatabaseHas('entities', ['short_name' => 'NAJ']);
     }
@@ -85,41 +84,42 @@ class AdminSprintOneTest extends TestCase
             ->assertJsonValidationErrors('approver_role');
 
         $this->actingAs($admin)
-            ->postJson('/admin/approval-chains', [
+            ->post('/admin/approval-chains', [
                 'department_id' => $department->id,
                 'level' => 1,
                 'type' => 'role',
                 'approver_role' => Roles::HrManager,
             ])
-            ->assertCreated();
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Approval Chain berhasil dibuat.');
     }
 
     public function test_smtp_and_graph_secrets_are_encrypted_and_single_active(): void
     {
         $admin = $this->adminUser();
 
-        $this->actingAs($admin)->postJson('/admin/smtp-settings', array_merge(SmtpSetting::factory()->make()->toArray(), [
+        $this->actingAs($admin)->post('/admin/smtp-settings', array_merge(SmtpSetting::factory()->make()->toArray(), [
             'password' => 'smtp-secret-one',
             'is_active' => true,
-        ]))->assertCreated();
+        ]))->assertRedirect()->assertSessionHas('success');
 
-        $this->actingAs($admin)->postJson('/admin/smtp-settings', array_merge(SmtpSetting::factory()->make()->toArray(), [
+        $this->actingAs($admin)->post('/admin/smtp-settings', array_merge(SmtpSetting::factory()->make()->toArray(), [
             'password' => 'smtp-secret-two',
             'is_active' => true,
-        ]))->assertCreated();
+        ]))->assertRedirect()->assertSessionHas('success');
 
         $this->assertSame(1, SmtpSetting::query()->where('is_active', true)->count());
         $this->assertDatabaseMissing('smtp_settings', ['password' => 'smtp-secret-two']);
 
-        $this->actingAs($admin)->postJson('/admin/graph-api-configs', array_merge(GraphApiConfig::factory()->make()->toArray(), [
+        $this->actingAs($admin)->post('/admin/graph-api-configs', array_merge(GraphApiConfig::factory()->make()->toArray(), [
             'client_secret' => 'graph-secret-one',
             'is_active' => true,
-        ]))->assertCreated();
+        ]))->assertRedirect()->assertSessionHas('success');
 
-        $this->actingAs($admin)->postJson('/admin/graph-api-configs', array_merge(GraphApiConfig::factory()->make()->toArray(), [
+        $this->actingAs($admin)->post('/admin/graph-api-configs', array_merge(GraphApiConfig::factory()->make()->toArray(), [
             'client_secret' => 'graph-secret-two',
             'is_active' => true,
-        ]))->assertCreated();
+        ]))->assertRedirect()->assertSessionHas('success');
 
         $this->assertSame(1, GraphApiConfig::query()->where('is_active', true)->count());
         $this->assertDatabaseMissing('graph_api_configs', ['client_secret' => 'graph-secret-two']);

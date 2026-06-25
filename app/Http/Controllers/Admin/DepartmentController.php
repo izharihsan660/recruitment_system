@@ -8,8 +8,8 @@ use App\Http\Requests\Admin\UpdateDepartmentRequest;
 use App\Http\Resources\DepartmentResource;
 use App\Models\Department;
 use App\Services\DepartmentService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Http\Response;
 
 class DepartmentController extends Controller
 {
@@ -20,9 +20,11 @@ class DepartmentController extends Controller
         return DepartmentResource::collection(Department::query()->with('entity')->latest()->paginate());
     }
 
-    public function store(StoreDepartmentRequest $request): DepartmentResource
+    public function store(StoreDepartmentRequest $request): RedirectResponse
     {
-        return new DepartmentResource($this->departmentService->create($request->validated())->load('entity'));
+        $this->departmentService->create($request->validated());
+
+        return redirect()->back()->with('success', 'Departemen berhasil dibuat.');
     }
 
     public function show(Department $department): DepartmentResource
@@ -30,15 +32,17 @@ class DepartmentController extends Controller
         return new DepartmentResource($department->load('entity'));
     }
 
-    public function update(UpdateDepartmentRequest $request, Department $department): DepartmentResource
+    public function update(UpdateDepartmentRequest $request, Department $department): RedirectResponse
     {
-        return new DepartmentResource($this->departmentService->update($department, $request->validated())->load('entity'));
+        $this->departmentService->update($department, $request->validated());
+
+        return redirect()->back()->with('success', 'Departemen berhasil diperbarui.');
     }
 
-    public function destroy(Department $department): Response
+    public function destroy(Department $department): RedirectResponse
     {
         $this->departmentService->delete($department);
 
-        return response()->noContent();
+        return redirect()->back()->with('success', 'Departemen berhasil dihapus.');
     }
 }

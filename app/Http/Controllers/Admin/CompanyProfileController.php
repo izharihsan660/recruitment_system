@@ -5,34 +5,42 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateCompanyProfileRequest;
 use App\Http\Requests\UploadCompanyImageRequest;
-use App\Http\Resources\CompanyProfileResource;
 use App\Models\CompanyProfile;
 use App\Services\CompanyProfileService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 
 class CompanyProfileController extends Controller
 {
     public function __construct(private readonly CompanyProfileService $companyProfileService) {}
 
-    public function update(UpdateCompanyProfileRequest $request): CompanyProfileResource
+    public function update(UpdateCompanyProfileRequest $request): RedirectResponse
     {
-        return new CompanyProfileResource($this->companyProfileService->update($request->validated()));
+        $this->companyProfileService->update($request->validated());
+
+        return redirect()->back()->with('success', 'Profil perusahaan berhasil diperbarui.');
     }
 
-    public function heroImage(UploadCompanyImageRequest $request): CompanyProfileResource
+    public function heroImage(UploadCompanyImageRequest $request): RedirectResponse
     {
-        return new CompanyProfileResource($this->companyProfileService->replaceHeroImage($request->file('image')));
+        $this->companyProfileService->replaceHeroImage($request->file('image'));
+
+        return redirect()->back()->with('success', 'Aksi berhasil dijalankan.');
     }
 
-    public function gallery(UploadCompanyImageRequest $request): CompanyProfileResource
+    public function gallery(UploadCompanyImageRequest $request): RedirectResponse
     {
-        return new CompanyProfileResource($this->companyProfileService->addGalleryImage($request->file('image')));
+        $this->companyProfileService->addGalleryImage($request->file('image'));
+
+        return redirect()->back()->with('success', 'Aksi berhasil dijalankan.');
     }
 
-    public function deleteGallery(int $index): CompanyProfileResource
+    public function deleteGallery(int $index): RedirectResponse
     {
         Gate::authorize('update', CompanyProfile::class);
 
-        return new CompanyProfileResource($this->companyProfileService->deleteGalleryImage($index));
+        $this->companyProfileService->deleteGalleryImage($index);
+
+        return redirect()->back()->with('success', 'Aksi berhasil dijalankan.');
     }
 }

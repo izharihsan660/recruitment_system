@@ -21,6 +21,7 @@ import {
 import { PropsWithChildren, ReactNode, useMemo, useState } from 'react';
 
 import { PageProps } from '@/types';
+import FlashMessage from '@/Components/FlashMessage';
 
 interface MenuItem {
     label: string;
@@ -29,6 +30,15 @@ interface MenuItem {
     icon?: ReactNode;
     children?: MenuItem[];
 }
+
+const ROLE_PRIORITY = [
+    'admin',
+    'hr_manager',
+    'hr_recruiter',
+    'hiring_manager',
+    'approver',
+    'pic_preboarding',
+];
 
 export default function AuthenticatedLayout({
     header,
@@ -42,6 +52,12 @@ export default function AuthenticatedLayout({
     const role = useMemo((): string => {
         if (!user?.roles || user.roles.length === 0) {
             return '';
+        }
+
+        for (const role of ROLE_PRIORITY) {
+            if (user.roles.includes(role)) {
+                return role;
+            }
         }
 
         return user.roles[0];
@@ -207,7 +223,10 @@ export default function AuthenticatedLayout({
                     </div>
                 </header>
 
-                <main className="h-[calc(100vh-4rem)] overflow-y-auto p-4 lg:p-6">{children}</main>
+                <main className="h-[calc(100vh-4rem)] overflow-y-auto p-4 lg:p-6">
+                    <FlashMessage />
+                    {children}
+                </main>
             </div>
         </div>
     );
@@ -377,7 +396,59 @@ function getMenuItemsByRole(role: string): MenuItem[] {
     ];
 
     if (role === 'admin') {
-        return adminMenus;
+        return [
+            ...adminMenus,
+            {
+                label: 'Recruitment',
+                children: [
+                    {
+                        label: 'Recruitment Request (FPK)',
+                        href: '/fpk',
+                        icon: <ClipboardList className="h-4 w-4" />,
+                    },
+                    {
+                        label: 'Lowongan Kerja',
+                        href: '/job-postings',
+                        icon: <Briefcase className="h-4 w-4" />,
+                    },
+                    {
+                        label: 'Pipeline Kandidat',
+                        href: '/pipeline',
+                        icon: <Workflow className="h-4 w-4" />,
+                    },
+                    {
+                        label: 'Input Kandidat',
+                        href: '/hr/candidates/input',
+                        icon: <UserSquare2 className="h-4 w-4" />,
+                    },
+                    {
+                        label: 'Email Intake',
+                        href: '/hr/email-intake',
+                        icon: <Mail className="h-4 w-4" />,
+                    },
+                    {
+                        label: 'Talent Pool',
+                        href: '/hr/talent-pool',
+                        icon: <Users className="h-4 w-4" />,
+                    },
+                    {
+                        label: 'Karyawan Aktif',
+                        href: '/hr/employees',
+                        icon: <Users className="h-4 w-4" />,
+                    },
+                    {
+                        label: 'Pre-boarding',
+                        href: '/hr/preboarding',
+                        icon: <ClipboardList className="h-4 w-4" />,
+                    },
+                    {
+                        label: 'Probation',
+                        href: '/hr/probation',
+                        icon: <ClipboardList className="h-4 w-4" />,
+                    },
+                ],
+            },
+        ];
     }
 
     if (role === 'hr_recruiter' || role === 'hr_manager') {

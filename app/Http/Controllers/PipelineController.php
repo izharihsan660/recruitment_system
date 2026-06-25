@@ -6,9 +6,9 @@ use App\Http\Requests\RejectPipelineRequest;
 use App\Http\Resources\ApplicationResource;
 use App\Models\Application;
 use App\Services\PipelineService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Http\Response;
 
 class PipelineController extends Controller
 {
@@ -46,24 +46,24 @@ class PipelineController extends Controller
         return new ApplicationResource($pipeline->load(['candidate', 'jobPosting', 'pipelineLogs', 'screening', 'psychoTest', 'hrInterview', 'userInterview', 'backgroundCheck', 'offeringLetter', 'pkwtContract']));
     }
 
-    public function move(Application $pipeline): Response
+    public function move(Application $pipeline): RedirectResponse
     {
         $this->pipelineService->moveToNextStage($pipeline, request()->user());
 
-        return response()->noContent();
+        return redirect()->back()->with('success', 'Aksi berhasil dijalankan.');
     }
 
-    public function reject(RejectPipelineRequest $request, Application $pipeline): Response
+    public function reject(RejectPipelineRequest $request, Application $pipeline): RedirectResponse
     {
         $this->pipelineService->reject($pipeline, $request->user(), $request->string('reason')->toString(), $request->boolean('skip_talent_pool'));
 
-        return response()->noContent();
+        return redirect()->back()->with('success', 'Aksi berhasil dijalankan.');
     }
 
-    public function withdraw(Application $pipeline): Response
+    public function withdraw(Application $pipeline): RedirectResponse
     {
         $this->pipelineService->withdraw($pipeline);
 
-        return response()->noContent();
+        return redirect()->back()->with('success', 'Aksi berhasil dijalankan.');
     }
 }

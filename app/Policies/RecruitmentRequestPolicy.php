@@ -10,7 +10,7 @@ class RecruitmentRequestPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole([Roles::HrRecruiter, Roles::HrManager, Roles::HiringManager]);
+        return $user->hasAnyRole([Roles::Admin, Roles::HrRecruiter, Roles::HrManager, Roles::HiringManager]);
     }
 
     public function view(User $user, RecruitmentRequest $recruitmentRequest): bool
@@ -20,7 +20,7 @@ class RecruitmentRequestPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasAnyRole([Roles::HrRecruiter, Roles::HrManager, Roles::HiringManager]);
+        return $user->hasAnyRole([Roles::Admin, Roles::HrRecruiter, Roles::HrManager, Roles::HiringManager]);
     }
 
     public function update(User $user, RecruitmentRequest $recruitmentRequest): bool
@@ -36,7 +36,7 @@ class RecruitmentRequestPolicy
 
     public function approve(User $user, RecruitmentRequest $recruitmentRequest): bool
     {
-        return $user->hasAnyRole([Roles::Approver, Roles::HrRecruiter, Roles::HrManager]);
+        return $user->hasAnyRole([Roles::Admin, Roles::Approver, Roles::HrRecruiter, Roles::HrManager]);
     }
 
     public function reject(User $user, RecruitmentRequest $recruitmentRequest): bool
@@ -56,6 +56,6 @@ class RecruitmentRequestPolicy
 
     private function isHr(User $user): bool
     {
-        return $user->hasAnyRole([Roles::HrRecruiter, Roles::HrManager]);
+        return $user->hasAnyRole([Roles::Admin, Roles::HrRecruiter, Roles::HrManager]);
     }
 }

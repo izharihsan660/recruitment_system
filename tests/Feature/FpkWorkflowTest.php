@@ -67,15 +67,24 @@ class FpkWorkflowTest extends TestCase
     {
         $fpk = $this->createFpk();
 
-        $this->actingAs($this->requester)->postJson(route('fpk.submit', $fpk))->assertNoContent();
+        $this->actingAs($this->requester)
+            ->post(route('fpk.submit', $fpk))
+            ->assertRedirect(route('fpk.show', $fpk))
+            ->assertSessionHas('success', 'FPK berhasil disubmit.');
         $this->assertSame('in_approval', $fpk->refresh()->status);
         $this->assertSame(1, $fpk->current_approval_level);
 
-        $this->actingAs($this->approver)->postJson(route('fpk.approve', $fpk), ['comment' => 'OK'])->assertNoContent();
+        $this->actingAs($this->approver)
+            ->post(route('fpk.approve', $fpk), ['comment' => 'OK'])
+            ->assertRedirect(route('fpk.show', $fpk))
+            ->assertSessionHas('success', 'FPK berhasil disetujui.');
         $this->assertSame('in_approval', $fpk->refresh()->status);
         $this->assertSame(2, $fpk->current_approval_level);
 
-        $this->actingAs($this->hrManager)->postJson(route('fpk.approve', $fpk), ['comment' => 'Final OK'])->assertNoContent();
+        $this->actingAs($this->hrManager)
+            ->post(route('fpk.approve', $fpk), ['comment' => 'Final OK'])
+            ->assertRedirect(route('fpk.show', $fpk))
+            ->assertSessionHas('success', 'FPK berhasil disetujui.');
         $this->assertSame('approved', $fpk->refresh()->status);
         $this->assertNull($fpk->current_approval_level);
         $this->assertSame(['approved', 'approved'], $fpk->approvalRecords()->orderBy('level')->pluck('action')->all());
@@ -85,7 +94,10 @@ class FpkWorkflowTest extends TestCase
     {
         $fpk = $this->submittedFpk();
 
-        $this->actingAs($this->approver)->postJson(route('fpk.reject', $fpk), ['comment' => 'Budget belum tersedia'])->assertNoContent();
+        $this->actingAs($this->approver)
+            ->post(route('fpk.reject', $fpk), ['comment' => 'Budget belum tersedia'])
+            ->assertRedirect(route('fpk.show', $fpk))
+            ->assertSessionHas('success', 'FPK berhasil ditolak.');
 
         $this->assertSame('rejected', $fpk->refresh()->status);
         $this->assertDatabaseHas('approval_records', [
@@ -100,7 +112,10 @@ class FpkWorkflowTest extends TestCase
     {
         $fpk = $this->submittedFpk();
 
-        $this->actingAs($this->approver)->postJson(route('fpk.need-revision', $fpk), ['comment' => 'Lengkapi kualifikasi'])->assertNoContent();
+        $this->actingAs($this->approver)
+            ->post(route('fpk.need-revision', $fpk), ['comment' => 'Lengkapi kualifikasi'])
+            ->assertRedirect(route('fpk.show', $fpk))
+            ->assertSessionHas('success', 'FPK dikembalikan untuk revisi.');
 
         $this->assertSame('need_revision', $fpk->refresh()->status);
         $this->assertNull($fpk->current_approval_level);
@@ -126,7 +141,55 @@ class FpkWorkflowTest extends TestCase
         $this->assertSame('in_approval', $fpk->refresh()->status);
     }
 
+    public function test_hiring_manager_can_create_fpk_with_fsd_facilities(): void
+    {
+        $payload = $this->validFpkPayload();
+
+        $this->actingAs($this->requester)
+            ->post(route('fpk.store'), $payload)
+            ->assertRedirect()
+            ->assertSessionHas('success', 'FPK berhasil dibuat.');
+
+        $fpk = RecruitmentRequest::query()->where('requester_id', $this->requester->id)->latest('id')->firstOrFail();
+
+        $this->assertSame($payload['facilities'], $fpk->facilities);
+    }
+
+    public function test_fpk_store_requires_all_fsd_facility_keys(): void
+    {
+        $payload = $this->validFpkPayload();
+        unset($payload['facilities']['salary_gross']);
+
+        $this->actingAs($this->requester)
+            ->post(route('fpk.store'), $payload)
+            ->assertSessionHasErrors('facilities.salary_gross');
+    }
+
+    public function test_user_without_hiring_manager_role_cannot_create_fpk(): void
+    {
+        $user = User::factory()->for($this->department)->create(['is_active' => true]);
+
+        $this->actingAs($user)
+            ->post(route('fpk.store'), $this->validFpkPayload())
+            ->assertForbidden();
+    }
+
     private function createFpk(): RecruitmentRequest
+    {
+        $payload = $this->validFpkPayload();
+
+        $this->actingAs($this->requester)
+            ->post(route('fpk.store'), $payload)
+            ->assertRedirect()
+            ->assertSessionHas('success', 'FPK berhasil dibuat.');
+
+        return RecruitmentRequest::query()->where('requester_id', $this->requester->id)->latest('id')->firstOrFail();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function validFpkPayload(): array
     {
         $payload = RecruitmentRequest::factory()->make([
             'entity_id' => $this->entity->id,
@@ -136,15 +199,15 @@ class FpkWorkflowTest extends TestCase
 
         unset($payload['requester_id'], $payload['status'], $payload['current_approval_level']);
 
-        $response = $this->actingAs($this->requester)->postJson(route('fpk.store'), $payload)->assertCreated();
-
-        return RecruitmentRequest::query()->findOrFail($response->json('data.id'));
+        return $payload;
     }
 
     private function submittedFpk(): RecruitmentRequest
     {
         $fpk = $this->createFpk();
-        $this->actingAs($this->requester)->postJson(route('fpk.submit', $fpk))->assertNoContent();
+        $this->actingAs($this->requester)
+            ->post(route('fpk.submit', $fpk))
+            ->assertRedirect(route('fpk.show', $fpk));
 
         return $fpk->refresh();
     }

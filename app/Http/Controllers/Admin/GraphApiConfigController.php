@@ -10,8 +10,8 @@ use App\Http\Resources\GraphApiConfigResource;
 use App\Models\GraphApiConfig;
 use App\Services\GraphApiConfigService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Http\Response;
 
 class GraphApiConfigController extends Controller
 {
@@ -22,9 +22,11 @@ class GraphApiConfigController extends Controller
         return GraphApiConfigResource::collection(GraphApiConfig::query()->latest()->paginate());
     }
 
-    public function store(StoreGraphApiConfigRequest $request): GraphApiConfigResource
+    public function store(StoreGraphApiConfigRequest $request): RedirectResponse
     {
-        return new GraphApiConfigResource($this->graphApiConfigService->create($request->validated()));
+        $this->graphApiConfigService->create($request->validated());
+
+        return redirect()->back()->with('success', 'Konfigurasi Graph API berhasil dibuat.');
     }
 
     public function show(GraphApiConfig $graphApiConfig): GraphApiConfigResource
@@ -32,16 +34,18 @@ class GraphApiConfigController extends Controller
         return new GraphApiConfigResource($graphApiConfig);
     }
 
-    public function update(UpdateGraphApiConfigRequest $request, GraphApiConfig $graphApiConfig): GraphApiConfigResource
+    public function update(UpdateGraphApiConfigRequest $request, GraphApiConfig $graphApiConfig): RedirectResponse
     {
-        return new GraphApiConfigResource($this->graphApiConfigService->update($graphApiConfig, $request->validated()));
+        $this->graphApiConfigService->update($graphApiConfig, $request->validated());
+
+        return redirect()->back()->with('success', 'Konfigurasi Graph API berhasil diperbarui.');
     }
 
-    public function destroy(GraphApiConfig $graphApiConfig): Response
+    public function destroy(GraphApiConfig $graphApiConfig): RedirectResponse
     {
         $this->graphApiConfigService->delete($graphApiConfig);
 
-        return response()->noContent();
+        return redirect()->back()->with('success', 'Konfigurasi Graph API berhasil dihapus.');
     }
 
     public function testConnection(TestGraphApiConnectionRequest $request, GraphApiConfig $graphApiConfig): JsonResponse

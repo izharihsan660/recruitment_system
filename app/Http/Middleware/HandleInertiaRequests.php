@@ -51,6 +51,10 @@ class HandleInertiaRequests extends Middleware
                     'has_cv' => $candidate->hasCv(),
                 ] : null,
             ],
+            'flash' => [
+                'success' => fn () => session('success'),
+                'error' => fn () => session('error'),
+            ],
             'unread_notifications_count' => fn (): int => $user
                 ? InAppNotification::query()
                     ->where('user_id', $user->id)

@@ -83,6 +83,11 @@ export function SelectInput(props: React.SelectHTMLAttributes<HTMLSelectElement>
     return <select {...props} className={`w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500 ${props.className ?? ''}`} />;
 }
 
-export function FormLabel({ children }: { children: ReactNode }): JSX.Element {
-    return <label className="mb-1 block text-sm font-medium text-slate-700">{children}</label>;
+export function FormLabel({ children, required = false }: { children: ReactNode; required?: boolean }): JSX.Element {
+    return (
+        <label className="mb-1 block text-sm font-medium text-slate-700">
+            {children}
+            {required && <span className="ml-1 text-red-600">*</span>}
+        </label>
+    );
 }

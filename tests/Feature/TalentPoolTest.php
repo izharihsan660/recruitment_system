@@ -56,9 +56,9 @@ class TalentPoolTest extends TestCase
         $job = JobPosting::factory()->open()->create();
         $talentPool = app(TalentPoolService::class)->addManual($candidate, ['status' => 'active'], $hr);
 
-        $this->actingAs($hr)->postJson("/hr/talent-pool/{$talentPool->id}/assign-to-job", [
+        $this->actingAs($hr)->post("/hr/talent-pool/{$talentPool->id}/assign-to-job", [
             'job_posting_id' => $job->id,
-        ])->assertSuccessful()->assertJsonPath('data.source', 'talent_pool');
+        ])->assertRedirect()->assertSessionHas('success', 'Aksi berhasil dijalankan.');
 
         $this->assertDatabaseHas('applications', [
             'job_posting_id' => $job->id,

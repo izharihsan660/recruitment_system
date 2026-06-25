@@ -10,8 +10,8 @@ use App\Http\Resources\SmtpSettingResource;
 use App\Models\SmtpSetting;
 use App\Services\SmtpSettingService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Http\Response;
 
 class SmtpSettingController extends Controller
 {
@@ -22,9 +22,11 @@ class SmtpSettingController extends Controller
         return SmtpSettingResource::collection(SmtpSetting::query()->latest()->paginate());
     }
 
-    public function store(StoreSmtpSettingRequest $request): SmtpSettingResource
+    public function store(StoreSmtpSettingRequest $request): RedirectResponse
     {
-        return new SmtpSettingResource($this->smtpSettingService->create($request->validated()));
+        $this->smtpSettingService->create($request->validated());
+
+        return redirect()->back()->with('success', 'Pengaturan SMTP berhasil dibuat.');
     }
 
     public function show(SmtpSetting $smtpSetting): SmtpSettingResource
@@ -32,16 +34,18 @@ class SmtpSettingController extends Controller
         return new SmtpSettingResource($smtpSetting);
     }
 
-    public function update(UpdateSmtpSettingRequest $request, SmtpSetting $smtpSetting): SmtpSettingResource
+    public function update(UpdateSmtpSettingRequest $request, SmtpSetting $smtpSetting): RedirectResponse
     {
-        return new SmtpSettingResource($this->smtpSettingService->update($smtpSetting, $request->validated()));
+        $this->smtpSettingService->update($smtpSetting, $request->validated());
+
+        return redirect()->back()->with('success', 'Pengaturan SMTP berhasil diperbarui.');
     }
 
-    public function destroy(SmtpSetting $smtpSetting): Response
+    public function destroy(SmtpSetting $smtpSetting): RedirectResponse
     {
         $this->smtpSettingService->delete($smtpSetting);
 
-        return response()->noContent();
+        return redirect()->back()->with('success', 'Pengaturan SMTP berhasil dihapus.');
     }
 
     public function testConnection(TestSmtpConnectionRequest $request, SmtpSetting $smtpSetting): JsonResponse

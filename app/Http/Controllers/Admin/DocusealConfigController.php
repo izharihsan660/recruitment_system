@@ -9,8 +9,8 @@ use App\Http\Requests\Admin\UpdateDocusealConfigRequest;
 use App\Http\Resources\DocusealConfigResource;
 use App\Models\DocusealConfig;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
@@ -21,16 +21,16 @@ class DocusealConfigController extends Controller
         return DocusealConfigResource::collection(DocusealConfig::query()->latest()->paginate());
     }
 
-    public function store(StoreDocusealConfigRequest $request): DocusealConfigResource
+    public function store(StoreDocusealConfigRequest $request): RedirectResponse
     {
-        $config = DB::transaction(function () use ($request): DocusealConfig {
+        DB::transaction(function () use ($request): DocusealConfig {
             $data = $request->validated();
             $this->deactivateOthersWhenActive($data);
 
             return DocusealConfig::query()->create($data);
         });
 
-        return new DocusealConfigResource($config);
+        return redirect()->back()->with('success', 'Konfigurasi DocuSeal berhasil dibuat.');
     }
 
     public function show(DocusealConfig $docusealConfig): DocusealConfigResource
@@ -38,9 +38,9 @@ class DocusealConfigController extends Controller
         return new DocusealConfigResource($docusealConfig);
     }
 
-    public function update(UpdateDocusealConfigRequest $request, DocusealConfig $docusealConfig): DocusealConfigResource
+    public function update(UpdateDocusealConfigRequest $request, DocusealConfig $docusealConfig): RedirectResponse
     {
-        $config = DB::transaction(function () use ($request, $docusealConfig): DocusealConfig {
+        DB::transaction(function () use ($request, $docusealConfig): DocusealConfig {
             $data = collect($request->validated())
                 ->reject(fn ($value, string $key): bool => in_array($key, ['api_key', 'webhook_secret'], true) && blank($value))
                 ->all();
@@ -51,14 +51,14 @@ class DocusealConfigController extends Controller
             return $docusealConfig->refresh();
         });
 
-        return new DocusealConfigResource($config);
+        return redirect()->back()->with('success', 'Konfigurasi DocuSeal berhasil diperbarui.');
     }
 
-    public function destroy(DocusealConfig $docusealConfig): Response
+    public function destroy(DocusealConfig $docusealConfig): RedirectResponse
     {
         $docusealConfig->delete();
 
-        return response()->noContent();
+        return redirect()->back()->with('success', 'Konfigurasi DocuSeal berhasil dihapus.');
     }
 
     public function testConnection(TestDocusealConnectionRequest $request, DocusealConfig $docusealConfig): JsonResponse

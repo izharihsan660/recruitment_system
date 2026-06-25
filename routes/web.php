@@ -256,7 +256,7 @@ Route::prefix('admin')
         Route::delete('company-profile/gallery/{index}', [CompanyProfileController::class, 'deleteGallery'])->name('company-profile.gallery.delete');
     });
 
-Route::middleware(['auth', 'active', 'role:'.Roles::HrRecruiter.'|'.Roles::HrManager])->group(function () {
+Route::middleware(['auth', 'active', 'role:'.Roles::Admin.'|'.Roles::HrRecruiter.'|'.Roles::HrManager])->group(function () {
     Route::get('/hr/candidates/input', fn () => Inertia::render('Hr/Candidates/Input', [
         'jobPostings' => JobPosting::query()->where('status', 'open')->orderBy('position_name')->get(['id', 'position_name']),
         'candidateSources' => CandidateSource::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
@@ -396,7 +396,7 @@ Route::middleware(['auth', 'active', 'role:'.Roles::HrRecruiter.'|'.Roles::HrMan
 
 });
 
-Route::middleware(['auth', 'active', 'role:'.Roles::HrRecruiter.'|'.Roles::HrManager.'|'.Roles::HiringManager])
+Route::middleware(['auth', 'active', 'role:'.Roles::Admin.'|'.Roles::HrRecruiter.'|'.Roles::HrManager.'|'.Roles::HiringManager])
     ->prefix('hr/interview-user')
     ->group(function () {
         Route::get('{application}', [UserInterviewController::class, 'show'])->name('interview-user.show');

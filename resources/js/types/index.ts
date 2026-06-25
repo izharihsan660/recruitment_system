@@ -32,6 +32,10 @@ export type PageProps<
             has_cv?: boolean;
         } | null;
     };
+    flash?: {
+        success?: string | null;
+        error?: string | null;
+    };
     unread_notifications_count?: number;
     latest_notifications?: InAppNotification[];
 };

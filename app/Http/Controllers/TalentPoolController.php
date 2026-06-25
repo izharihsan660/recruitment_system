@@ -5,12 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Requests\AssignTalentPoolToJobRequest;
 use App\Http\Requests\StoreTalentPoolRequest;
 use App\Http\Requests\UpdateTalentPoolRequest;
-use App\Http\Resources\ApplicationResource;
 use App\Http\Resources\TalentPoolResource;
 use App\Models\Candidate;
 use App\Models\JobPosting;
 use App\Models\TalentPool;
 use App\Services\TalentPoolService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -45,24 +45,28 @@ class TalentPoolController extends Controller
         return new TalentPoolResource($talentPool->load(['candidate', 'sourceApplication']));
     }
 
-    public function store(StoreTalentPoolRequest $request): TalentPoolResource
+    public function store(StoreTalentPoolRequest $request): RedirectResponse
     {
         $candidate = Candidate::query()->findOrFail($request->integer('candidate_id'));
 
-        return new TalentPoolResource($this->talentPoolService->addManual($candidate, $request->validated(), $request->user()));
+        $this->talentPoolService->addManual($candidate, $request->validated(), $request->user());
+
+        return redirect()->back()->with('success', 'Talent Pool berhasil dibuat.');
     }
 
-    public function update(UpdateTalentPoolRequest $request, TalentPool $talentPool): TalentPoolResource
+    public function update(UpdateTalentPoolRequest $request, TalentPool $talentPool): RedirectResponse
     {
         $talentPool->update($request->validated());
 
-        return new TalentPoolResource($talentPool->refresh()->load('candidate'));
+        return redirect()->back()->with('success', 'Talent Pool berhasil diperbarui.');
     }
 
-    public function assignToJob(AssignTalentPoolToJobRequest $request, TalentPool $talentPool): ApplicationResource
+    public function assignToJob(AssignTalentPoolToJobRequest $request, TalentPool $talentPool): RedirectResponse
     {
         $job = JobPosting::query()->findOrFail($request->integer('job_posting_id'));
 
-        return new ApplicationResource($this->talentPoolService->assignToJob($talentPool, $job, $request->user()));
+        $this->talentPoolService->assignToJob($talentPool, $job, $request->user());
+
+        return redirect()->back()->with('success', 'Aksi berhasil dijalankan.');
     }
 }

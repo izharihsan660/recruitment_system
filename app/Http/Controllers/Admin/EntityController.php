@@ -8,8 +8,8 @@ use App\Http\Requests\Admin\UpdateEntityRequest;
 use App\Http\Resources\EntityResource;
 use App\Models\Entity;
 use App\Services\EntityService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Http\Response;
 
 class EntityController extends Controller
 {
@@ -20,9 +20,11 @@ class EntityController extends Controller
         return EntityResource::collection(Entity::query()->latest()->paginate());
     }
 
-    public function store(StoreEntityRequest $request): EntityResource
+    public function store(StoreEntityRequest $request): RedirectResponse
     {
-        return new EntityResource($this->entityService->create($request->validated()));
+        $this->entityService->create($request->validated());
+
+        return redirect()->back()->with('success', 'Entitas berhasil dibuat.');
     }
 
     public function show(Entity $entity): EntityResource
@@ -30,15 +32,17 @@ class EntityController extends Controller
         return new EntityResource($entity);
     }
 
-    public function update(UpdateEntityRequest $request, Entity $entity): EntityResource
+    public function update(UpdateEntityRequest $request, Entity $entity): RedirectResponse
     {
-        return new EntityResource($this->entityService->update($entity, $request->validated()));
+        $this->entityService->update($entity, $request->validated());
+
+        return redirect()->back()->with('success', 'Entitas berhasil diperbarui.');
     }
 
-    public function destroy(Entity $entity): Response
+    public function destroy(Entity $entity): RedirectResponse
     {
         $this->entityService->delete($entity);
 
-        return response()->noContent();
+        return redirect()->back()->with('success', 'Entitas berhasil dihapus.');
     }
 }

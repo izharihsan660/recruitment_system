@@ -5,16 +5,14 @@ namespace App\Http\Controllers;
 use App\Http\Requests\AssignEmailIntakeToJobRequest;
 use App\Http\Requests\MoveEmailIntakeToTalentPoolRequest;
 use App\Http\Requests\RejectEmailIntakeRequest;
-use App\Http\Resources\ApplicationResource;
 use App\Http\Resources\EmailIntakeResource;
-use App\Http\Resources\TalentPoolResource;
 use App\Models\EmailIntake;
 use App\Models\JobPosting;
 use App\Services\EmailIntakeReviewService;
 use App\Services\EmailIntakeService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Http\Response;
 
 class EmailIntakeController extends Controller
 {
@@ -43,36 +41,40 @@ class EmailIntakeController extends Controller
         return EmailIntakeResource::collection($this->emailIntakeService->fetchEmails());
     }
 
-    public function assignToJob(AssignEmailIntakeToJobRequest $request, EmailIntake $emailIntake): ApplicationResource
+    public function assignToJob(AssignEmailIntakeToJobRequest $request, EmailIntake $emailIntake): RedirectResponse
     {
         $job = JobPosting::query()->findOrFail($request->integer('job_posting_id'));
 
-        return new ApplicationResource($this->emailIntakeReviewService->assignToJob($emailIntake, $job, $request->user(), $request->boolean('consent')));
+        $this->emailIntakeReviewService->assignToJob($emailIntake, $job, $request->user(), $request->boolean('consent'));
+
+        return redirect()->back()->with('success', 'Aksi berhasil dijalankan.');
     }
 
-    public function moveToTalentPool(MoveEmailIntakeToTalentPoolRequest $request, EmailIntake $emailIntake): TalentPoolResource
+    public function moveToTalentPool(MoveEmailIntakeToTalentPoolRequest $request, EmailIntake $emailIntake): RedirectResponse
     {
-        return new TalentPoolResource($this->emailIntakeReviewService->moveToTalentPool($emailIntake, $request->user(), $request->boolean('consent'), $request->string('notes')->toString()));
+        $this->emailIntakeReviewService->moveToTalentPool($emailIntake, $request->user(), $request->boolean('consent'), $request->string('notes')->toString());
+
+        return redirect()->back()->with('success', 'Aksi berhasil dijalankan.');
     }
 
-    public function reject(RejectEmailIntakeRequest $request, EmailIntake $emailIntake): Response
+    public function reject(RejectEmailIntakeRequest $request, EmailIntake $emailIntake): RedirectResponse
     {
         $this->emailIntakeReviewService->reject($emailIntake, $request->user(), $request->string('reason')->toString());
 
-        return response()->noContent();
+        return redirect()->back()->with('success', 'Aksi berhasil dijalankan.');
     }
 
-    public function ignore(EmailIntake $emailIntake): Response
+    public function ignore(EmailIntake $emailIntake): RedirectResponse
     {
         $this->emailIntakeReviewService->ignore($emailIntake, request()->user());
 
-        return response()->noContent();
+        return redirect()->back()->with('success', 'Aksi berhasil dijalankan.');
     }
 
-    public function spam(EmailIntake $emailIntake): Response
+    public function spam(EmailIntake $emailIntake): RedirectResponse
     {
         $this->emailIntakeReviewService->markSpam($emailIntake, request()->user());
 
-        return response()->noContent();
+        return redirect()->back()->with('success', 'Aksi berhasil dijalankan.');
     }
 }

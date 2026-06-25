@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Screening;
 use App\Models\User;
+use App\Support\Roles;
 
 class ScreeningPolicy
 {
@@ -12,7 +13,7 @@ class ScreeningPolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return $user->hasAnyRole([Roles::Admin, Roles::HrRecruiter, Roles::HrManager]);
     }
 
     /**
@@ -20,7 +21,7 @@ class ScreeningPolicy
      */
     public function view(User $user, Screening $screening): bool
     {
-        return false;
+        return $user->hasAnyRole([Roles::Admin, Roles::HrRecruiter, Roles::HrManager]);
     }
 
     /**
@@ -28,7 +29,7 @@ class ScreeningPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return $user->hasAnyRole([Roles::Admin, Roles::HrRecruiter, Roles::HrManager]);
     }
 
     /**
@@ -36,7 +37,7 @@ class ScreeningPolicy
      */
     public function update(User $user, Screening $screening): bool
     {
-        return false;
+        return $user->hasAnyRole([Roles::Admin, Roles::HrRecruiter, Roles::HrManager]);
     }
 
     /**

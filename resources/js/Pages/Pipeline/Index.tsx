@@ -1,3 +1,4 @@
+import ConfirmDialog from '@/Components/ConfirmDialog';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import {
     Badge,
@@ -126,7 +127,6 @@ export default function PipelineIndex({
         }
 
         router.post(`/hr/pipeline/${pendingMove.application.id}/move`, {}, {
-            preserveScroll: true,
             onFinish: () => setPendingMove(null),
         });
     }
@@ -354,6 +354,17 @@ function ConfirmMoveDialog({
 
 function RejectBox({ id }: { id: number }): JSX.Element {
     const [reason, setReason] = useState('');
+    const [pendingAction, setPendingAction] = useState<'reject' | 'withdraw' | null>(null);
+
+    function confirmAction(): void {
+        if (pendingAction === 'reject') {
+            router.post(`/hr/pipeline/${id}/reject`, { reason }, { onFinish: () => setPendingAction(null) });
+        }
+
+        if (pendingAction === 'withdraw') {
+            router.post(`/hr/pipeline/${id}/withdraw`, {}, { onFinish: () => setPendingAction(null) });
+        }
+    }
 
     return (
         <div className="space-y-2">
@@ -364,13 +375,21 @@ function RejectBox({ id }: { id: number }): JSX.Element {
                 onChange={(event) => setReason(event.target.value)}
             />
             <div className="flex gap-2">
-                <Button variant="danger" onClick={() => router.post(`/hr/pipeline/${id}/reject`, { reason })}>
+                <Button variant="danger" onClick={() => setPendingAction('reject')}>
                     Reject
                 </Button>
-                <Button variant="secondary" onClick={() => router.post(`/hr/pipeline/${id}/withdraw`)}>
+                <Button variant="secondary" onClick={() => setPendingAction('withdraw')}>
                     Withdraw
                 </Button>
             </div>
+            <ConfirmDialog
+                open={pendingAction !== null}
+                title={pendingAction === 'withdraw' ? 'Withdraw lamaran?' : 'Reject kandidat?'}
+                message={pendingAction === 'withdraw' ? 'Lamaran kandidat akan ditandai withdraw.' : 'Kandidat akan ditolak dari tahap pipeline saat ini.'}
+                confirmLabel={pendingAction === 'withdraw' ? 'Ya, Withdraw' : 'Ya, Reject'}
+                onConfirm={confirmAction}
+                onCancel={() => setPendingAction(null)}
+            />
         </div>
     );
 }
@@ -457,7 +476,7 @@ function decisionLabel(value: string): string {
 
 function fallbackMove(application: ApplicationItem): void {
     if (confirm('Pindahkan kandidat ke stage berikutnya?')) {
-        router.post(`/hr/pipeline/${application.id}/move`, {}, { preserveScroll: true });
+        router.post(`/hr/pipeline/${application.id}/move`, {}, {});
     }
 }
 

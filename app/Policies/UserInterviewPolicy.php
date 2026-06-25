@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\User;
 use App\Models\UserInterview;
+use App\Support\Roles;
 
 class UserInterviewPolicy
 {
@@ -12,7 +13,7 @@ class UserInterviewPolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return $user->hasAnyRole([Roles::Admin, Roles::HrRecruiter, Roles::HrManager, Roles::HiringManager]);
     }
 
     /**
@@ -20,7 +21,7 @@ class UserInterviewPolicy
      */
     public function view(User $user, UserInterview $userInterview): bool
     {
-        return false;
+        return $user->hasAnyRole([Roles::Admin, Roles::HrRecruiter, Roles::HrManager, Roles::HiringManager]);
     }
 
     /**
@@ -28,7 +29,7 @@ class UserInterviewPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return $user->hasAnyRole([Roles::Admin, Roles::HrRecruiter, Roles::HrManager, Roles::HiringManager]);
     }
 
     /**
@@ -36,7 +37,7 @@ class UserInterviewPolicy
      */
     public function update(User $user, UserInterview $userInterview): bool
     {
-        return false;
+        return $user->hasAnyRole([Roles::Admin, Roles::HrRecruiter, Roles::HrManager, Roles::HiringManager]);
     }
 
     /**

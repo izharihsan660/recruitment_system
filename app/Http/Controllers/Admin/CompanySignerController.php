@@ -8,8 +8,8 @@ use App\Http\Requests\Admin\UpdateCompanySignerRequest;
 use App\Http\Resources\CompanySignerResource;
 use App\Models\CompanySigner;
 use App\Services\CompanySignerService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Http\Response;
 
 class CompanySignerController extends Controller
 {
@@ -20,9 +20,11 @@ class CompanySignerController extends Controller
         return CompanySignerResource::collection(CompanySigner::query()->with(['entity', 'user.roles'])->latest()->paginate());
     }
 
-    public function store(StoreCompanySignerRequest $request): CompanySignerResource
+    public function store(StoreCompanySignerRequest $request): RedirectResponse
     {
-        return new CompanySignerResource($this->companySignerService->create($request->validated())->load(['entity', 'user.roles']));
+        $this->companySignerService->create($request->validated());
+
+        return redirect()->back()->with('success', 'Penanda tangan perusahaan berhasil dibuat.');
     }
 
     public function show(CompanySigner $companySigner): CompanySignerResource
@@ -30,15 +32,17 @@ class CompanySignerController extends Controller
         return new CompanySignerResource($companySigner->load(['entity', 'user.roles']));
     }
 
-    public function update(UpdateCompanySignerRequest $request, CompanySigner $companySigner): CompanySignerResource
+    public function update(UpdateCompanySignerRequest $request, CompanySigner $companySigner): RedirectResponse
     {
-        return new CompanySignerResource($this->companySignerService->update($companySigner, $request->validated())->load(['entity', 'user.roles']));
+        $this->companySignerService->update($companySigner, $request->validated());
+
+        return redirect()->back()->with('success', 'Penanda tangan perusahaan berhasil diperbarui.');
     }
 
-    public function destroy(CompanySigner $companySigner): Response
+    public function destroy(CompanySigner $companySigner): RedirectResponse
     {
         $this->companySignerService->delete($companySigner);
 
-        return response()->noContent();
+        return redirect()->back()->with('success', 'Penanda tangan perusahaan berhasil dihapus.');
     }
 }

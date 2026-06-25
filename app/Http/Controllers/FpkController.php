@@ -9,9 +9,9 @@ use App\Http\Resources\ApprovalRecordResource;
 use App\Http\Resources\RecruitmentRequestResource;
 use App\Models\RecruitmentRequest;
 use App\Services\RecruitmentRequestService;
-use Illuminate\Http\JsonResponse;
+use App\Support\Roles;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
 
 class FpkController extends Controller
@@ -24,18 +24,19 @@ class FpkController extends Controller
 
         $query = RecruitmentRequest::query()->with(['entity', 'department', 'requester'])->latest();
 
-        if (! request()->user()->hasAnyRole(['hr_recruiter', 'hr_manager'])) {
+        if (! request()->user()->hasAnyRole([Roles::Admin, Roles::HrRecruiter, Roles::HrManager])) {
             $query->where('department_id', request()->user()->department_id);
         }
 
         return RecruitmentRequestResource::collection($query->paginate());
     }
 
-    public function store(StoreFpkRequest $request): JsonResponse
+    public function store(StoreFpkRequest $request): RedirectResponse
     {
         $fpk = $this->recruitmentRequestService->create($request->validated(), $request->user());
 
-        return (new RecruitmentRequestResource($fpk->load(['entity', 'department', 'requester', 'approvalRecords.approver'])))->response()->setStatusCode(201);
+        return redirect()->route('fpk.show', $fpk)
+            ->with('success', 'FPK berhasil dibuat.');
     }
 
     public function show(RecruitmentRequest $fpk): RecruitmentRequestResource
@@ -45,51 +46,57 @@ class FpkController extends Controller
         return new RecruitmentRequestResource($fpk->load(['entity', 'department', 'requester', 'approvalRecords.approver']));
     }
 
-    public function update(UpdateFpkRequest $request, RecruitmentRequest $fpk): RecruitmentRequestResource
+    public function update(UpdateFpkRequest $request, RecruitmentRequest $fpk): RedirectResponse
     {
         $fpk = $this->recruitmentRequestService->update($fpk, $request->validated());
 
-        return new RecruitmentRequestResource($fpk->load(['entity', 'department', 'requester', 'approvalRecords.approver']));
+        return redirect()->route('fpk.show', $fpk)
+            ->with('success', 'FPK berhasil diperbarui.');
     }
 
-    public function submit(RecruitmentRequest $fpk): Response
+    public function submit(RecruitmentRequest $fpk): RedirectResponse
     {
         Gate::authorize('submit', $fpk);
         $this->recruitmentRequestService->submit($fpk, request()->user());
 
-        return response()->noContent();
+        return redirect()->route('fpk.show', $fpk)
+            ->with('success', 'FPK berhasil disubmit.');
     }
 
-    public function approve(ApprovalActionRequest $request, RecruitmentRequest $fpk): Response
+    public function approve(ApprovalActionRequest $request, RecruitmentRequest $fpk): RedirectResponse
     {
         Gate::authorize('approve', $fpk);
         $this->recruitmentRequestService->approve($fpk, $request->user(), $request->string('comment')->toString() ?: null);
 
-        return response()->noContent();
+        return redirect()->route('fpk.show', $fpk)
+            ->with('success', 'FPK berhasil disetujui.');
     }
 
-    public function reject(ApprovalActionRequest $request, RecruitmentRequest $fpk): Response
+    public function reject(ApprovalActionRequest $request, RecruitmentRequest $fpk): RedirectResponse
     {
         Gate::authorize('reject', $fpk);
         $this->recruitmentRequestService->reject($fpk, $request->user(), $request->string('comment')->toString());
 
-        return response()->noContent();
+        return redirect()->route('fpk.show', $fpk)
+            ->with('success', 'FPK berhasil ditolak.');
     }
 
-    public function needRevision(ApprovalActionRequest $request, RecruitmentRequest $fpk): Response
+    public function needRevision(ApprovalActionRequest $request, RecruitmentRequest $fpk): RedirectResponse
     {
         Gate::authorize('needRevision', $fpk);
         $this->recruitmentRequestService->needRevision($fpk, $request->user(), $request->string('comment')->toString());
 
-        return response()->noContent();
+        return redirect()->route('fpk.show', $fpk)
+            ->with('success', 'FPK dikembalikan untuk revisi.');
     }
 
-    public function close(RecruitmentRequest $fpk): Response
+    public function close(RecruitmentRequest $fpk): RedirectResponse
     {
         Gate::authorize('close', $fpk);
         $this->recruitmentRequestService->close($fpk, request()->user());
 
-        return response()->noContent();
+        return redirect()->route('fpk.show', $fpk)
+            ->with('success', 'FPK berhasil ditutup.');
     }
 
     public function approvals(RecruitmentRequest $fpk): AnonymousResourceCollection

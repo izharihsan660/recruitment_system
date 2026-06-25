@@ -8,8 +8,8 @@ use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\UserService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Http\Response;
 
 class UserController extends Controller
 {
@@ -20,9 +20,11 @@ class UserController extends Controller
         return UserResource::collection(User::query()->with(['department.entity', 'roles'])->latest()->paginate());
     }
 
-    public function store(StoreUserRequest $request): UserResource
+    public function store(StoreUserRequest $request): RedirectResponse
     {
-        return new UserResource($this->userService->create($request->validated())->load(['department.entity', 'roles']));
+        $this->userService->create($request->validated());
+
+        return redirect()->back()->with('success', 'User berhasil dibuat.');
     }
 
     public function show(User $user): UserResource
@@ -30,15 +32,17 @@ class UserController extends Controller
         return new UserResource($user->load(['department.entity', 'roles']));
     }
 
-    public function update(UpdateUserRequest $request, User $user): UserResource
+    public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
-        return new UserResource($this->userService->update($user, $request->validated())->load(['department.entity', 'roles']));
+        $this->userService->update($user, $request->validated());
+
+        return redirect()->back()->with('success', 'User berhasil diperbarui.');
     }
 
-    public function destroy(User $user): Response
+    public function destroy(User $user): RedirectResponse
     {
         $this->userService->delete($user);
 
-        return response()->noContent();
+        return redirect()->back()->with('success', 'User berhasil dihapus.');
     }
 }

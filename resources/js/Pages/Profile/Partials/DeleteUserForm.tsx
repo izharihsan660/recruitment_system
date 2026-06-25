@@ -35,7 +35,6 @@ export default function DeleteUserForm({
         e.preventDefault();
 
         destroy(route('profile.destroy'), {
-            preserveScroll: true,
             onSuccess: () => closeModal(),
             onError: () => passwordInput.current?.focus(),
             onFinish: () => reset(),

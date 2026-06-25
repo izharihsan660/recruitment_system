@@ -23,15 +23,15 @@ class JobPostingTest extends TestCase
         $hr = $this->hrUser();
         $fpk = RecruitmentRequest::factory()->create(['status' => 'approved']);
 
-        $response = $this->actingAs($hr)->postJson(route('job-postings.store'), [
+        $this->actingAs($hr)->post(route('job-postings.store'), [
             'recruitment_request_id' => $fpk->id,
             'requirements' => 'Minimal SMA.',
             'mcu_required' => true,
-        ])->assertCreated();
+        ])->assertRedirect()->assertSessionHas('success', 'Job Posting berhasil dibuat.');
 
-        $job = JobPosting::query()->findOrFail($response->json('data.id'));
+        $job = JobPosting::query()->where('recruitment_request_id', $fpk->id)->firstOrFail();
 
-        $this->actingAs($hr)->postJson(route('job-postings.open', $job))->assertNoContent();
+        $this->actingAs($hr)->post(route('job-postings.open', $job))->assertRedirect()->assertSessionHas('success', 'Aksi berhasil dijalankan.');
 
         $this->getJson(route('portal.jobs.index'))
             ->assertOk()

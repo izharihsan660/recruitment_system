@@ -8,8 +8,8 @@ use App\Http\Requests\Admin\UpdateApprovalChainRequest;
 use App\Http\Resources\ApprovalChainResource;
 use App\Models\ApprovalChain;
 use App\Services\ApprovalChainService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Http\Response;
 
 class ApprovalChainController extends Controller
 {
@@ -20,9 +20,11 @@ class ApprovalChainController extends Controller
         return ApprovalChainResource::collection(ApprovalChain::query()->with(['department.entity', 'approverUser.roles'])->orderBy('department_id')->orderBy('level')->paginate());
     }
 
-    public function store(StoreApprovalChainRequest $request): ApprovalChainResource
+    public function store(StoreApprovalChainRequest $request): RedirectResponse
     {
-        return new ApprovalChainResource($this->approvalChainService->create($request->validated())->load(['department.entity', 'approverUser.roles']));
+        $this->approvalChainService->create($request->validated());
+
+        return redirect()->back()->with('success', 'Approval Chain berhasil dibuat.');
     }
 
     public function show(ApprovalChain $approvalChain): ApprovalChainResource
@@ -30,15 +32,17 @@ class ApprovalChainController extends Controller
         return new ApprovalChainResource($approvalChain->load(['department.entity', 'approverUser.roles']));
     }
 
-    public function update(UpdateApprovalChainRequest $request, ApprovalChain $approvalChain): ApprovalChainResource
+    public function update(UpdateApprovalChainRequest $request, ApprovalChain $approvalChain): RedirectResponse
     {
-        return new ApprovalChainResource($this->approvalChainService->update($approvalChain, $request->validated())->load(['department.entity', 'approverUser.roles']));
+        $this->approvalChainService->update($approvalChain, $request->validated());
+
+        return redirect()->back()->with('success', 'Approval Chain berhasil diperbarui.');
     }
 
-    public function destroy(ApprovalChain $approvalChain): Response
+    public function destroy(ApprovalChain $approvalChain): RedirectResponse
     {
         $this->approvalChainService->delete($approvalChain);
 
-        return response()->noContent();
+        return redirect()->back()->with('success', 'Approval Chain berhasil dihapus.');
     }
 }

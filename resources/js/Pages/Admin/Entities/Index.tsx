@@ -23,13 +23,13 @@ export default function EntityIndex({ entities }: { entities: Paginated<Entity> 
 
     function submit(event: FormEvent): void {
         event.preventDefault();
-        const options = { preserveScroll: true, onSuccess: () => setOpen(false) };
+        const options = { onSuccess: () => setOpen(false) };
         editing ? form.put(`/admin/entities/${editing.id}`, options) : form.post('/admin/entities', options);
     }
 
     function toggle(entity: Entity): void {
         if (confirm(`Yakin ingin ${entity.is_active ? 'nonaktifkan' : 'aktifkan'} entitas ini?`)) {
-            router.put(`/admin/entities/${entity.id}`, { is_active: !entity.is_active }, { preserveScroll: true });
+            router.put(`/admin/entities/${entity.id}`, { is_active: !entity.is_active }, {});
         }
     }
 

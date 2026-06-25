@@ -8,8 +8,8 @@ use App\Http\Requests\Admin\UpdateCandidateSourceRequest;
 use App\Http\Resources\CandidateSourceResource;
 use App\Models\CandidateSource;
 use App\Services\CandidateSourceService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Http\Response;
 
 class CandidateSourceController extends Controller
 {
@@ -20,9 +20,11 @@ class CandidateSourceController extends Controller
         return CandidateSourceResource::collection(CandidateSource::query()->latest()->paginate());
     }
 
-    public function store(StoreCandidateSourceRequest $request): CandidateSourceResource
+    public function store(StoreCandidateSourceRequest $request): RedirectResponse
     {
-        return new CandidateSourceResource($this->candidateSourceService->create($request->validated()));
+        $this->candidateSourceService->create($request->validated());
+
+        return redirect()->back()->with('success', 'Sumber kandidat berhasil dibuat.');
     }
 
     public function show(CandidateSource $candidateSource): CandidateSourceResource
@@ -30,15 +32,17 @@ class CandidateSourceController extends Controller
         return new CandidateSourceResource($candidateSource);
     }
 
-    public function update(UpdateCandidateSourceRequest $request, CandidateSource $candidateSource): CandidateSourceResource
+    public function update(UpdateCandidateSourceRequest $request, CandidateSource $candidateSource): RedirectResponse
     {
-        return new CandidateSourceResource($this->candidateSourceService->update($candidateSource, $request->validated()));
+        $this->candidateSourceService->update($candidateSource, $request->validated());
+
+        return redirect()->back()->with('success', 'Sumber kandidat berhasil diperbarui.');
     }
 
-    public function destroy(CandidateSource $candidateSource): Response
+    public function destroy(CandidateSource $candidateSource): RedirectResponse
     {
         $this->candidateSourceService->delete($candidateSource);
 
-        return response()->noContent();
+        return redirect()->back()->with('success', 'Sumber kandidat berhasil dihapus.');
     }
 }

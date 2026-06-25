@@ -19,7 +19,7 @@ class PipelineTest extends TestCase
         $hr = $this->hrUser();
         $application = Application::factory()->create(['status' => 'applied']);
 
-        $this->actingAs($hr)->postJson("/hr/pipeline/{$application->id}/move")->assertNoContent();
+        $this->actingAs($hr)->post("/hr/pipeline/{$application->id}/move")->assertRedirect()->assertSessionHas('success', 'Aksi berhasil dijalankan.');
 
         $this->assertDatabaseHas('applications', ['id' => $application->id, 'status' => 'screening']);
         $this->assertDatabaseHas('pipeline_logs', ['application_id' => $application->id, 'from_stage' => 'applied', 'to_stage' => 'screening']);
@@ -30,9 +30,9 @@ class PipelineTest extends TestCase
         $hr = $this->hrUser();
         $application = Application::factory()->create(['status' => 'applied']);
 
-        $this->actingAs($hr)->postJson("/hr/pipeline/{$application->id}/move", [
+        $this->actingAs($hr)->post("/hr/pipeline/{$application->id}/move", [
             'to_stage' => 'interview_hr',
-        ])->assertNoContent();
+        ])->assertRedirect()->assertSessionHas('success', 'Aksi berhasil dijalankan.');
 
         $this->assertDatabaseHas('applications', ['id' => $application->id, 'status' => 'screening']);
         $this->assertDatabaseMissing('pipeline_logs', ['application_id' => $application->id, 'from_stage' => 'applied', 'to_stage' => 'interview_hr']);
@@ -44,7 +44,7 @@ class PipelineTest extends TestCase
         $job = JobPosting::factory()->open()->create(['test_required' => false]);
         $application = Application::factory()->for($job)->create(['status' => 'screening']);
 
-        $this->actingAs($hr)->postJson("/hr/pipeline/{$application->id}/move")->assertNoContent();
+        $this->actingAs($hr)->post("/hr/pipeline/{$application->id}/move")->assertRedirect()->assertSessionHas('success', 'Aksi berhasil dijalankan.');
 
         $this->assertDatabaseHas('applications', ['id' => $application->id, 'status' => 'interview_hr']);
         $this->assertDatabaseHas('pipeline_logs', ['application_id' => $application->id, 'to_stage' => 'interview_hr']);
@@ -59,9 +59,9 @@ class PipelineTest extends TestCase
             'reason' => '',
         ])->assertUnprocessable();
 
-        $this->actingAs($hr)->postJson("/hr/pipeline/{$application->id}/reject", [
+        $this->actingAs($hr)->post("/hr/pipeline/{$application->id}/reject", [
             'reason' => 'Tidak cocok budaya kerja',
-        ])->assertNoContent();
+        ])->assertRedirect()->assertSessionHas('success', 'Aksi berhasil dijalankan.');
 
         $this->assertDatabaseHas('applications', [
             'id' => $application->id,

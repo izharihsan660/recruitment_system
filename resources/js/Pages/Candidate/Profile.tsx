@@ -9,8 +9,8 @@ export default function Profile({ candidate }: { candidate: { data: Candidate } 
     const profile = useForm({ name: item.name ?? '', phone: item.phone ?? '', address: item.address ?? '', birth_date: item.birth_date ?? '', gender: item.gender ?? '', education: item.education ?? [], experience: item.experience ?? [] });
     const cv = useForm<{ cv: File | null }>({ cv: null });
 
-    function save(event: FormEvent): void { event.preventDefault(); profile.put('/candidate/profile', { preserveScroll: true }); }
-    function uploadCv(event: FormEvent): void { event.preventDefault(); cv.post('/candidate/cv', { forceFormData: true, preserveScroll: true }); }
+    function save(event: FormEvent): void { event.preventDefault(); profile.put('/candidate/profile', {}); }
+    function uploadCv(event: FormEvent): void { event.preventDefault(); cv.post('/candidate/cv', { forceFormData: true }); }
     function addEducation(): void { profile.setData('education', [...profile.data.education, { degree: '', major: '', institution: '', year: '' }]); }
     function updateEducation(index: number, field: keyof EducationItem, value: string): void { profile.setData('education', profile.data.education.map((row, rowIndex) => rowIndex === index ? { ...row, [field]: value } : row)); }
     function removeEducation(index: number): void { if (confirm('Hapus data pendidikan ini?')) profile.setData('education', profile.data.education.filter((_, rowIndex) => rowIndex !== index)); }
