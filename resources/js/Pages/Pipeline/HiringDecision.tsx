@@ -1,7 +1,40 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm } from '@inertiajs/react';
+import { FormEvent } from 'react';
 
 export default function HiringDecision({ application }: { application: any }): JSX.Element {
     const form = useForm({ decision: 'approved', reason: '', notes: '' });
-    return <AuthenticatedLayout header={<h1 className="text-lg font-semibold">Hiring Decision</h1>}><Head title="Hiring Decision" /><form onSubmit={(e) => { e.preventDefault(); if (confirm('Submit keputusan hiring?')) form.post(`/hr/hiring-decision/${application.id}`); }} className="max-w-2xl space-y-4 rounded-lg border bg-white p-4"><div><p className="font-semibold">{application.candidate.name}</p><p className="text-sm text-slate-500">{application.job_posting.position_name}</p><p className="text-sm">MCU: {application.mcu_simper_record?.mcu_status ?? '-'} / SIMPER: {application.mcu_simper_record?.simper_status ?? '-'}</p></div><label className="block"><input type="radio" checked={form.data.decision === 'approved'} onChange={() => form.setData('decision', 'approved')} /> Disetujui</label><label className="block"><input type="radio" checked={form.data.decision === 'rejected'} onChange={() => form.setData('decision', 'rejected')} /> Ditolak</label>{form.data.decision === 'rejected' && <textarea className="w-full rounded border p-2" placeholder="Alasan" onChange={(e) => form.setData('reason', e.target.value)} />}<textarea className="w-full rounded border p-2" placeholder="Catatan" onChange={(e) => form.setData('notes', e.target.value)} /><button disabled={form.processing} className="rounded bg-blue-600 px-4 py-2 text-white">Submit Keputusan</button></form></AuthenticatedLayout>;
+    const hasDecision = Boolean(application.hiring_decision?.id ?? application.hiringDecision?.id);
+
+    function submit(event: FormEvent): void {
+        event.preventDefault();
+
+        if (confirm('Submit keputusan hiring?')) {
+            form.post(`/hr/hiring-decision/${application.id}`);
+        }
+    }
+
+    return (
+        <AuthenticatedLayout header={<h1 className="text-lg font-semibold">Hiring Decision</h1>}>
+            <Head title="Hiring Decision" />
+            <div className="max-w-2xl space-y-4 rounded-lg border bg-white p-4">
+                <div>
+                    <p className="font-semibold">{application.candidate.name}</p>
+                    <p className="text-sm text-slate-500">{application.job_posting.position_name}</p>
+                    <p className="text-sm">MCU: {application.mcu_simper_record?.mcu_status ?? '-'} / SIMPER: {application.mcu_simper_record?.simper_status ?? '-'}</p>
+                </div>
+                {hasDecision ? (
+                    <p className="rounded bg-slate-100 p-3 text-sm">Keputusan hiring sudah diinput.</p>
+                ) : (
+                    <form onSubmit={submit} className="space-y-4">
+                        <label className="block"><input type="radio" checked={form.data.decision === 'approved'} onChange={() => form.setData('decision', 'approved')} /> Disetujui</label>
+                        <label className="block"><input type="radio" checked={form.data.decision === 'rejected'} onChange={() => form.setData('decision', 'rejected')} /> Ditolak</label>
+                        {form.data.decision === 'rejected' && <textarea className="w-full rounded border p-2" placeholder="Alasan" onChange={(event) => form.setData('reason', event.target.value)} />}
+                        <textarea className="w-full rounded border p-2" placeholder="Catatan" onChange={(event) => form.setData('notes', event.target.value)} />
+                        <button disabled={form.processing} className="rounded bg-blue-600 px-4 py-2 text-white">Submit Keputusan</button>
+                    </form>
+                )}
+            </div>
+        </AuthenticatedLayout>
+    );
 }

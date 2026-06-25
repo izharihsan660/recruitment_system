@@ -1,11 +1,13 @@
 import ConfirmDialog from '@/Components/ConfirmDialog';
 import { Button, Card, FormLabel, PageHeader, SelectInput, TextArea, TextInput } from '@/Components/shared/ui';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { PageProps } from '@/types';
 import { JobPosting, TalentPoolItem } from '@/lib/recruitment';
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
 export default function TalentPoolShow({ talentPool, jobPostings }: { talentPool: TalentPoolItem; jobPostings: JobPosting[] }): JSX.Element {
+    const { errors } = usePage<PageProps>().props;
     const form = useForm({ status: talentPool.status ?? 'active', tags: (talentPool.tags ?? []).join(', '), notes: talentPool.notes ?? '', job_posting_id: '' });
     const [confirmAssign, setConfirmAssign] = useState(false);
 
@@ -16,6 +18,11 @@ export default function TalentPoolShow({ talentPool, jobPostings }: { talentPool
     return (
         <AuthenticatedLayout header={<h1 className="text-lg font-semibold">Detail Talent Pool</h1>}>
             <Head title="Detail Talent Pool" />
+            {Object.keys(errors).length > 0 && (
+                <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                    {Object.values(errors).map((error, index) => <p key={index}>{error}</p>)}
+                </div>
+            )}
             <PageHeader title={talentPool.candidate?.name ?? 'Kandidat'} description={talentPool.candidate?.email} />
             <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
                 <Card className="p-6">

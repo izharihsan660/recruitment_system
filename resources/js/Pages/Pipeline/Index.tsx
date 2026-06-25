@@ -45,6 +45,8 @@ const stages = [
 ] as const;
 
 type Stage = (typeof stages)[number];
+const inactiveCandidateStatuses = ['rejected', 'withdrawn'];
+const finalMoveStatuses = ['hired', ...inactiveCandidateStatuses];
 
 interface PendingMove {
     application: ApplicationItem;
@@ -101,7 +103,7 @@ export default function PipelineIndex({
         const application = applicationsById.get(String(event.active.id));
         const targetStage = event.over?.id ? String(event.over.id) : null;
 
-        if (!application || !isStage(application.status) || !isStage(targetStage)) {
+        if (!application || !isStage(application.status) || !isStage(targetStage) || !canMoveStage(application)) {
             return;
         }
 
@@ -212,8 +214,8 @@ export default function PipelineIndex({
                     <div className="mt-6 space-y-3">
                         <PipelineStageActions application={selected} />
                         <PipelineSummary application={selected} />
-                        <Button onClick={() => fallbackMove(selected)}>Pindah Stage</Button>
-                        <RejectBox id={selected.id} />
+                        {canMoveStage(selected) && <Button onClick={() => fallbackMove(selected)}>Pindah Stage</Button>}
+                        {canRejectOrWithdraw(selected) && <RejectBox id={selected.id} />}
                     </div>
                     <h3 className="mt-6 font-semibold">Timeline Stage</h3>
                     <div className="mt-2 space-y-2">
@@ -308,16 +310,18 @@ function CandidateCard({
                     <Badge tone="blue">{application.source ?? 'Source'}</Badge>
                 </div>
             </div>
-            <Button
-                className="mt-3 w-full"
-                variant="secondary"
-                onClick={(event) => {
-                    event.stopPropagation();
-                    fallbackMove(application);
-                }}
-            >
-                Pindah Stage
-            </Button>
+            {canMoveStage(application) && (
+                <Button
+                    className="mt-3 w-full"
+                    variant="secondary"
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        fallbackMove(application);
+                    }}
+                >
+                    Pindah Stage
+                </Button>
+            )}
         </Card>
     );
 }
@@ -395,6 +399,10 @@ function RejectBox({ id }: { id: number }): JSX.Element {
 }
 
 function PipelineStageActions({ application }: { application: ApplicationItem }): JSX.Element | null {
+    if (inactiveCandidateStatuses.includes(application.status ?? '')) {
+        return null;
+    }
+
     const actions: Record<string, { href: string; labels: string[] }> = {
         screening: { href: `/hr/screening/${application.id}`, labels: ['Isi Screening'] },
         test_psikotes: { href: `/hr/psycho-test/${application.id}`, labels: application.psycho_test?.id ? ['Input Hasil Test'] : ['Input Jadwal Test'] },
@@ -475,9 +483,21 @@ function decisionLabel(value: string): string {
 }
 
 function fallbackMove(application: ApplicationItem): void {
+    if (!canMoveStage(application)) {
+        return;
+    }
+
     if (confirm('Pindahkan kandidat ke stage berikutnya?')) {
         router.post(`/hr/pipeline/${application.id}/move`, {}, {});
     }
+}
+
+function canRejectOrWithdraw(application: ApplicationItem): boolean {
+    return !inactiveCandidateStatuses.includes(application.status ?? '');
+}
+
+function canMoveStage(application: ApplicationItem): boolean {
+    return !finalMoveStatuses.includes(application.status ?? '');
 }
 
 function isStage(value: unknown): value is Stage {

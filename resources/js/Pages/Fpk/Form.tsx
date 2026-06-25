@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useState } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
 
 import { Button, Card, FieldError, FormLabel, PageHeader, SelectInput, TextArea, TextInput } from '@/Components/shared/ui';
@@ -85,14 +85,6 @@ export default function FpkForm({ mode, fpk, entities, departments }: { mode: 'c
         facilities: { ...emptyFacilities, ...(fpk?.facilities ?? {}) },
     });
 
-    useEffect(() => {
-        const firstError = Object.keys(form.errors)[0];
-
-        if (firstError) {
-            setStep(fieldStep(firstError));
-        }
-    }, [form.errors]);
-
     function payload() {
         return {
             ...form.data,
@@ -104,11 +96,22 @@ export default function FpkForm({ mode, fpk, entities, departments }: { mode: 'c
         };
     }
 
+    function handleErrors(errors: Record<string, string>): void {
+        form.setError(errors);
+
+        const firstError = Object.keys(errors)[0];
+
+        if (firstError) {
+            setStep(fieldStep(firstError));
+        }
+    }
+
     function submit(event: FormEvent, shouldSubmit = false): void {
         event.preventDefault();
 
         if (mode === 'edit' && fpk) {
             router.put(`/fpk/${fpk.id}`, payload(), {
+                onError: handleErrors,
                 onSuccess: () => {
                     if (shouldSubmit) {
                         router.post(`/fpk/${fpk.id}/submit`);
@@ -120,12 +123,13 @@ export default function FpkForm({ mode, fpk, entities, departments }: { mode: 'c
         }
 
         router.post('/fpk', payload(), {
-            onSuccess: () => {
+            onError: handleErrors,
+            onSuccess: (page) => {
                 if (shouldSubmit) {
-                    const newId = window.location.pathname.split('/')[2];
+                    const fpkId = (page.props as { created_fpk_id?: number }).created_fpk_id;
 
-                    if (newId) {
-                        router.post(`/fpk/${newId}/submit`);
+                    if (fpkId) {
+                        router.post(`/fpk/${fpkId}/submit`);
                     }
                 }
             },

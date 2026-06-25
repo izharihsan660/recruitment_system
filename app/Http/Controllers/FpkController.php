@@ -36,7 +36,8 @@ class FpkController extends Controller
         $fpk = $this->recruitmentRequestService->create($request->validated(), $request->user());
 
         return redirect()->route('fpk.show', $fpk)
-            ->with('success', 'FPK berhasil dibuat.');
+            ->with('success', 'FPK berhasil dibuat.')
+            ->with('created_fpk_id', $fpk->id);
     }
 
     public function show(RecruitmentRequest $fpk): RecruitmentRequestResource

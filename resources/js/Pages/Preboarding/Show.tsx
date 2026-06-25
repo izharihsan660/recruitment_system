@@ -1,6 +1,7 @@
 import ConfirmDialog from '@/Components/ConfirmDialog';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, router, useForm } from '@inertiajs/react';
+import { PageProps } from '@/types';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
 interface PreboardingItem { id: number; title: string; status: string; pic?: { name?: string } | null }
@@ -9,6 +10,7 @@ interface EmployeePayload { full_name: string }
 interface UserPayload { id: number; name: string }
 
 export default function Show({ employee, checklist, users }: { employee: EmployeePayload; checklist: ChecklistPayload; users: UserPayload[] }): JSX.Element {
+    const { errors } = usePage<PageProps>().props;
     const itemForm = useForm({ title: '', description: '' });
     const [deleteItemId, setDeleteItemId] = useState<number | null>(null);
     const days = Math.ceil((new Date(checklist.first_day).getTime() - Date.now()) / 86400000);
@@ -24,6 +26,11 @@ export default function Show({ employee, checklist, users }: { employee: Employe
     return (
         <AuthenticatedLayout header={<h1 className="text-lg font-semibold">Pre-boarding</h1>}>
             <Head title="Pre-boarding" />
+            {Object.keys(errors).length > 0 && (
+                <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                    {Object.values(errors).map((error, index) => <p key={index}>{error}</p>)}
+                </div>
+            )}
             <div className="space-y-4">
                 <div className="rounded-lg border bg-white p-4"><p className="font-semibold">{employee.full_name}</p><p>Status: {checklist.status} · First day dalam {days} hari</p><div className="mt-2 h-2 rounded bg-slate-100"><div className="h-2 rounded bg-blue-600" style={{ width: `${(checklist.items.filter((item) => item.status === 'done').length / Math.max(checklist.items.length, 1)) * 100}%` }} /></div></div>
                 <form onSubmit={(event) => { event.preventDefault(); itemForm.post(`/hr/preboarding/${checklist.id}/items`); }} className="flex gap-2"><input className="rounded border p-2" placeholder="Tambah item" onChange={(event) => itemForm.setData('title', event.target.value)} /><button className="rounded bg-blue-600 px-3 text-white">Tambah Item</button></form>

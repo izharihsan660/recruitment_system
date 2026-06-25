@@ -55,6 +55,7 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn () => session('success'),
                 'error' => fn () => session('error'),
             ],
+            'created_fpk_id' => fn () => session('created_fpk_id'),
             'unread_notifications_count' => fn (): int => $user
                 ? InAppNotification::query()
                     ->where('user_id', $user->id)
