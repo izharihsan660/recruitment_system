@@ -248,6 +248,17 @@ abort(422, 'Validasi gagal.');
 - Tidak ada `dd()`, `var_dump()`, atau `console.log()` di kode yang di-commit
 - Gunakan `php artisan make:` untuk generate file — jangan buat manual
 
+## Database Migration Rules (CRITICAL)
+
+- NEVER edit existing migration files — selalu buat migration baru
+- Saat tambah kolom ke tabel yang sudah ada, selalu pakai ->nullable() atau ->default() agar tidak break data existing
+- NEVER jalankan migrate:fresh — pakai php artisan migrate saja
+- Setelah schema change, jalankan php artisan migrate (bukan fresh)
+- Jika migrate gagal, fix migration file-nya, bukan data existing
+- Selalu jalankan php artisan migrate:status sebelum dan sesudah schema changes untuk verifikasi
+- Jika perlu rename kolom atau ubah tipe kolom, buat migration terpisah dengan nama deskriptif
+- Setiap migration baru harus punya down() method yang benar untuk rollback
+
 ===
 
 <laravel-boost-guidelines>
