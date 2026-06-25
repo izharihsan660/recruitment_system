@@ -56,6 +56,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use Spatie\Permission\Models\Role;
 
 Route::post('/webhooks/docuseal', DocuSealWebhookController::class)->name('webhooks.docuseal');
 
@@ -222,6 +223,11 @@ Route::prefix('admin')
         Route::get('candidate-sources', fn () => Inertia::render('Admin/CandidateSources/Index', [
             'candidateSources' => CandidateSource::query()->latest()->paginate(10),
         ]))->name('candidate-sources.index');
+        Route::get('users', fn () => Inertia::render('Admin/Users/Index', [
+            'users' => User::query()->with(['department.entity', 'roles'])->latest()->paginate(10),
+            'departments' => Department::query()->with('entity')->where('is_active', true)->orderBy('name')->get(['id', 'name', 'entity_id']),
+            'roles' => Role::query()->orderBy('name')->pluck('name')->values(),
+        ]))->name('users.index');
         Route::get('smtp', fn () => Inertia::render('Admin/Configurations/Smtp', [
             'smtpSettings' => SmtpSetting::query()->latest()->get(),
         ]));
@@ -235,7 +241,7 @@ Route::prefix('admin')
             'companyProfile' => CompanyProfile::query()->first(),
         ]));
 
-        Route::apiResource('users', UserController::class);
+        Route::apiResource('users', UserController::class)->except(['index', 'show']);
         Route::apiResource('entities', EntityController::class)->except(['index']);
         Route::apiResource('departments', DepartmentController::class)->except(['index']);
         Route::apiResource('approval-chains', ApprovalChainController::class)->except(['index']);

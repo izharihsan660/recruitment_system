@@ -266,6 +266,11 @@ function getMenuItemsByRole(role: string): MenuItem[] {
                     icon: <Database className="h-4 w-4" />,
                 },
                 {
+                    label: 'Manajemen User',
+                    href: '/admin/users',
+                    icon: <Users className="h-4 w-4" />,
+                },
+                {
                     label: 'Approval Chain',
                     href: '/admin/approval-chains',
                     icon: <Workflow className="h-4 w-4" />,

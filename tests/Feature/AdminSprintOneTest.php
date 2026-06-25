@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Support\Roles;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -55,6 +56,47 @@ class AdminSprintOneTest extends TestCase
             ->assertSessionHas('success', 'Entitas berhasil dibuat.');
 
         $this->assertDatabaseHas('entities', ['short_name' => 'NAJ']);
+    }
+
+    public function test_admin_can_open_user_management_page(): void
+    {
+        $admin = $this->adminUser();
+        $department = Department::factory()->create();
+        $user = User::factory()->create(['department_id' => $department->id]);
+        $user->assignRole(Roles::HrRecruiter);
+
+        $this->actingAs($admin)
+            ->get('/admin/users')
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Admin/Users/Index')
+                ->has('users.data', 2)
+                ->has('departments', 1)
+                ->where('roles.0', Roles::Admin)
+            );
+    }
+
+    public function test_admin_can_create_user_with_role_and_department(): void
+    {
+        $admin = $this->adminUser();
+        $department = Department::factory()->create();
+
+        $this->actingAs($admin)
+            ->post('/admin/users', [
+                'name' => 'Recruiter Baru',
+                'email' => 'recruiter@example.test',
+                'password' => 'password123',
+                'department_id' => $department->id,
+                'is_active' => true,
+                'roles' => [Roles::HrRecruiter],
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success', 'User berhasil dibuat.');
+
+        $createdUser = User::query()->where('email', 'recruiter@example.test')->firstOrFail();
+
+        $this->assertSame($department->id, $createdUser->department_id);
+        $this->assertTrue($createdUser->hasRole(Roles::HrRecruiter));
     }
 
     public function test_non_admin_cannot_access_admin_api(): void
