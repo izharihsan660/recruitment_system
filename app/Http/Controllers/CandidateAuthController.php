@@ -6,7 +6,6 @@ use App\Http\Requests\CandidateLoginRequest;
 use App\Http\Requests\CandidateRegisterRequest;
 use App\Http\Requests\UpdateCandidateProfileRequest;
 use App\Http\Requests\UploadCandidateCvRequest;
-use App\Http\Resources\ApplicationResource;
 use App\Http\Resources\CandidateResource;
 use App\Services\CandidateAuthService;
 use Illuminate\Http\JsonResponse;
@@ -18,8 +17,6 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\Rules\Password as PasswordRule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
-use Inertia\Inertia;
-use Inertia\Response;
 
 class CandidateAuthController extends Controller
 {
@@ -123,30 +120,30 @@ class CandidateAuthController extends Controller
         return redirect()->route('portal.home');
     }
 
-    public function dashboard(): Response
+    public function dashboard(): View
     {
         $candidate = Auth::guard('candidate')->user();
         $applications = $candidate->applications()->with(['jobPosting.entity', 'jobPosting.department'])->latest()->get();
 
-        return Inertia::render('Candidate/Dashboard', [
-            'candidate' => CandidateResource::make($candidate),
+        return view('candidate.dashboard', [
+            'candidate' => $candidate,
             'summary' => [
                 'active' => $applications->whereNotIn('status', ['rejected', 'withdrawn', 'hired'])->count(),
                 'processed' => $applications->whereIn('status', ['screening', 'test_psikotes', 'interview_hr', 'interview_user', 'background_check', 'offering', 'mcu_simper', 'hiring_decision', 'pkwt'])->count(),
                 'accepted' => $applications->where('status', 'hired')->count(),
             ],
-            'latestApplications' => ApplicationResource::collection($applications->take(5))->resolve(),
+            'latestApplications' => $applications->take(5),
         ]);
     }
 
-    public function profile(): Response|JsonResponse
+    public function profile(): View|JsonResponse
     {
         if (request()->expectsJson()) {
             return response()->json(['data' => CandidateResource::make(Auth::guard('candidate')->user())->resolve()]);
         }
 
-        return Inertia::render('Candidate/Profile', [
-            'candidate' => CandidateResource::make(Auth::guard('candidate')->user()),
+        return view('candidate.profile', [
+            'candidate' => Auth::guard('candidate')->user(),
         ]);
     }
 

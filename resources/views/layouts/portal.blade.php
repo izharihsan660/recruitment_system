@@ -14,7 +14,7 @@
     <meta property="og:title" content="@yield('og_title', View::yieldContent('title', $companyName))">
     <meta property="og:description" content="@yield('og_description', View::yieldContent('meta_description', Str::limit(strip_tags((string) $company?->about), 160, '')))">
     @if($company?->hero_image_path)<meta property="og:image" content="{{ Storage::url($company->hero_image_path) }}">@endif
-    @vite(['resources/css/app.css', 'resources/js/app.tsx'])
+    @vite(['resources/css/app.css', 'resources/js/portal.ts'])
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased">
     <div class="min-h-screen">
@@ -33,15 +33,53 @@
                     <a class="text-sm font-medium text-slate-600 hover:text-blue-600" href="{{ route('portal.home') }}">Beranda</a>
                     <a class="text-sm font-medium text-slate-600 hover:text-blue-600" href="{{ route('portal.jobs.index') }}">Lowongan</a>
                     <a class="text-sm font-medium text-slate-600 hover:text-blue-600" href="{{ route('portal.home') }}#tentang-kami">Tentang Kami</a>
-                    <a class="rounded-md border border-blue-600 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50" href="{{ route('candidate.login.form') }}">Masuk</a>
-                    <a class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700" href="{{ route('candidate.register.form') }}">Daftar</a>
+                    @auth('candidate')
+                        <a href="{{ route('candidate.dashboard') }}" class="text-sm font-medium text-slate-600 hover:text-blue-600">
+                            {{ auth('candidate')->user()->name }}
+                        </a>
+                        <a href="{{ route('candidate.dashboard') }}" class="rounded-md border border-blue-600 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50">
+                            Dashboard
+                        </a>
+                        <form method="POST" action="{{ route('candidate.logout') }}" class="inline">
+                            @csrf
+                            <button type="submit" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+                                Keluar
+                            </button>
+                        </form>
+                    @else
+                        <a href="{{ route('candidate.login.form') }}" class="rounded-md border border-blue-600 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50">
+                            Masuk
+                        </a>
+                        <a href="{{ route('candidate.register.form') }}" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+                            Daftar
+                        </a>
+                    @endauth
                 </div>
             </nav>
             <div data-portal-menu class="hidden border-t border-slate-200 bg-white px-4 py-4 md:hidden">
                 <div class="flex flex-col gap-3">
                     <a href="{{ route('portal.home') }}">Beranda</a><a href="{{ route('portal.jobs.index') }}">Lowongan</a><a href="{{ route('portal.home') }}#tentang-kami">Tentang Kami</a>
-                    <a class="rounded-md border border-blue-600 px-4 py-2 text-center text-blue-600" href="{{ route('candidate.login.form') }}">Masuk</a>
-                    <a class="rounded-md bg-blue-600 px-4 py-2 text-center text-white" href="{{ route('candidate.register.form') }}">Daftar</a>
+                    @auth('candidate')
+                        <a href="{{ route('candidate.dashboard') }}" class="text-sm font-medium text-slate-600 hover:text-blue-600">
+                            {{ auth('candidate')->user()->name }}
+                        </a>
+                        <a href="{{ route('candidate.dashboard') }}" class="rounded-md border border-blue-600 px-4 py-2 text-center text-sm font-semibold text-blue-600 hover:bg-blue-50">
+                            Dashboard
+                        </a>
+                        <form method="POST" action="{{ route('candidate.logout') }}" class="inline">
+                            @csrf
+                            <button type="submit" class="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+                                Keluar
+                            </button>
+                        </form>
+                    @else
+                        <a href="{{ route('candidate.login.form') }}" class="rounded-md border border-blue-600 px-4 py-2 text-center text-sm font-semibold text-blue-600 hover:bg-blue-50">
+                            Masuk
+                        </a>
+                        <a href="{{ route('candidate.register.form') }}" class="rounded-md bg-blue-600 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-blue-700">
+                            Daftar
+                        </a>
+                    @endauth
                 </div>
             </div>
         </header>
@@ -53,6 +91,5 @@
             </div>
         </footer>
     </div>
-<script>document.querySelectorAll('[data-portal-menu-button]').forEach((button) => button.addEventListener('click', () => document.querySelector('[data-portal-menu]')?.classList.toggle('hidden')));</script>
 </body>
 </html>

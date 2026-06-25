@@ -8,6 +8,11 @@ use App\Support\Roles;
 
 class JobPostingPolicy
 {
+    public function before(User $user): ?bool
+    {
+        return $user->hasRole(Roles::Admin) ? true : null;
+    }
+
     public function viewAny(User $user): bool
     {
         return $this->isHr($user);

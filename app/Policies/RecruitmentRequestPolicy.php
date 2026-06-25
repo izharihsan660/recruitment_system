@@ -8,6 +8,11 @@ use App\Support\Roles;
 
 class RecruitmentRequestPolicy
 {
+    public function before(User $user): ?bool
+    {
+        return $user->hasRole(Roles::Admin) ? true : null;
+    }
+
     public function viewAny(User $user): bool
     {
         return $user->hasAnyRole([Roles::Admin, Roles::HrRecruiter, Roles::HrManager, Roles::HiringManager]);

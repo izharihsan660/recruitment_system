@@ -8,6 +8,11 @@ use App\Support\Roles;
 
 class HrInterviewPolicy
 {
+    public function before(User $user): ?bool
+    {
+        return $user->hasRole(Roles::Admin) ? true : null;
+    }
+
     /**
      * Determine whether the user can view any models.
      */

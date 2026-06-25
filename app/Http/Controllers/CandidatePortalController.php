@@ -4,28 +4,26 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ApplyJobRequest;
 use App\Http\Resources\ApplicationResource;
-use App\Http\Resources\JobPostingResource;
 use App\Models\Application;
 use App\Models\JobPosting;
 use App\Services\ApplicationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
-use Inertia\Inertia;
-use Inertia\Response;
+use Illuminate\View\View;
 
 class CandidatePortalController extends Controller
 {
     public function __construct(private readonly ApplicationService $applicationService) {}
 
-    public function applyForm(JobPosting $jobPosting): Response
+    public function applyForm(JobPosting $jobPosting): View
     {
         abort_unless($jobPosting->status === 'open', 404);
 
         $candidate = request()->user('candidate');
         $existingApplication = $jobPosting->applications()->whereBelongsTo($candidate)->first();
 
-        return Inertia::render('Candidate/Apply', [
-            'job' => JobPostingResource::make($jobPosting->load(['entity', 'department'])),
+        return view('candidate.apply', [
+            'job' => $jobPosting->load(['entity', 'department']),
             'hasCv' => $candidate->hasCv(),
             'existingApplicationId' => $existingApplication?->id,
         ]);
@@ -56,7 +54,7 @@ class CandidatePortalController extends Controller
         return back()->with('success', 'Lamaran berhasil dibatalkan.');
     }
 
-    public function applications(): Response
+    public function applications(): View
     {
         $status = request('status');
 
@@ -67,18 +65,18 @@ class CandidatePortalController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return Inertia::render('Candidate/Applications/Index', [
-            'applications' => ApplicationResource::collection($applications),
+        return view('candidate.applications.index', [
+            'applications' => $applications,
             'filters' => ['status' => $status],
         ]);
     }
 
-    public function application(Application $application): Response
+    public function application(Application $application): View
     {
         abort_unless($application->candidate_id === request()->user('candidate')->id, 404);
 
-        return Inertia::render('Candidate/Applications/Show', [
-            'application' => ApplicationResource::make($application->load(['jobPosting.entity', 'jobPosting.department', 'documents', 'pipelineLogs'])),
+        return view('candidate.applications.show', [
+            'application' => $application->load(['jobPosting.entity', 'jobPosting.department', 'documents', 'pipelineLogs.actor']),
         ]);
     }
 }

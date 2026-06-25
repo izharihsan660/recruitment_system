@@ -17,6 +17,12 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(200);
     }
 
+    public function test_guest_admin_is_redirected_to_admin_login(): void
+    {
+        $this->get(route('dashboard'))
+            ->assertRedirect(route('login'));
+    }
+
     public function test_users_can_authenticate_using_the_login_screen(): void
     {
         $user = User::factory()->create();

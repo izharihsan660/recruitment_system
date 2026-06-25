@@ -31,6 +31,46 @@ class CandidateAuthTest extends TestCase
         $this->getJson(route('candidate.profile'))->assertOk()->assertJsonPath('data.email', 'budi@example.com');
     }
 
+    public function test_candidate_dashboard_uses_blade_view(): void
+    {
+        $candidate = Candidate::factory()->create(['name' => 'Budi Kandidat']);
+
+        $this->actingAs($candidate, 'candidate')
+            ->get(route('candidate.dashboard'))
+            ->assertOk()
+            ->assertViewIs('candidate.dashboard')
+            ->assertSee('Lamaran Aktif')
+            ->assertSee('5 Lamaran Terbaru');
+    }
+
+    public function test_candidate_profile_uses_blade_view(): void
+    {
+        $candidate = Candidate::factory()->create(['email' => 'budi@example.com']);
+
+        $this->actingAs($candidate, 'candidate')
+            ->get(route('candidate.profile'))
+            ->assertOk()
+            ->assertViewIs('candidate.profile')
+            ->assertSee('Profil Kandidat')
+            ->assertSee('Upload CV')
+            ->assertSee('budi@example.com');
+    }
+
+    public function test_guest_candidate_is_redirected_to_candidate_login(): void
+    {
+        $this->get(route('candidate.dashboard'))
+            ->assertRedirect(route('candidate.login.form'));
+    }
+
+    public function test_authenticated_candidate_is_redirected_away_from_candidate_login(): void
+    {
+        $candidate = Candidate::factory()->create();
+
+        $this->actingAs($candidate, 'candidate')
+            ->get(route('candidate.login.form'))
+            ->assertRedirect(route('candidate.dashboard'));
+    }
+
     public function test_candidate_can_upload_valid_cv(): void
     {
         Storage::fake('public');
