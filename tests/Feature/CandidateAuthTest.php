@@ -40,7 +40,7 @@ class CandidateAuthTest extends TestCase
             ->assertOk()
             ->assertViewIs('candidate.dashboard')
             ->assertSee('Lamaran Aktif')
-            ->assertSee('5 Lamaran Terbaru');
+            ->assertSee('Lamaran Terbaru');
     }
 
     public function test_candidate_profile_uses_blade_view(): void

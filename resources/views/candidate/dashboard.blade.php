@@ -44,7 +44,7 @@
 
     <div class="mt-6 rounded-xl border bg-white p-5 shadow-sm">
         <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h2 class="text-lg font-semibold text-slate-900">5 Lamaran Terbaru</h2>
+            <h2 class="text-lg font-semibold text-slate-900">Lamaran Terbaru</h2>
             <a href="{{ route('candidate.applications.index') }}" class="text-sm font-semibold text-blue-600 hover:text-blue-700">Lihat semua lamaran</a>
         </div>
 
@@ -55,29 +55,31 @@
                 <a href="{{ route('portal.jobs.index') }}" class="mt-4 inline-flex rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">Cari Lowongan</a>
             </div>
         @else
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200 text-sm">
-                    <thead>
-                        <tr class="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                            <th class="py-3 pr-4">Posisi</th>
-                            <th class="px-4 py-3">Departemen</th>
-                            <th class="px-4 py-3">PT</th>
-                            <th class="px-4 py-3">Status</th>
-                            <th class="py-3 pl-4">Tanggal</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        @foreach($latestApplications as $application)
-                            <tr>
-                                <td class="py-3 pr-4 font-medium text-slate-900">{{ $application->jobPosting?->position_name ?? '-' }}</td>
-                                <td class="px-4 py-3 text-slate-600">{{ $application->jobPosting?->department?->name ?? '-' }}</td>
-                                <td class="px-4 py-3 text-slate-600">{{ $application->jobPosting?->entity?->name ?? '-' }}</td>
-                                <td class="px-4 py-3"><span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">{{ $application->portalStatusLabel() }}</span></td>
-                                <td class="py-3 pl-4 text-slate-600">{{ $application->created_at?->format('d M Y') }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+            <div class="space-y-3">
+                @foreach($latestApplications as $application)
+                    @php
+                        $safeStatus = match ($application->status) {
+                            'applied', 'screening', 'test', 'test_psikotes' => 'Lamaran Sedang Diproses',
+                            'interview_hr', 'interview_user' => 'Tahap Interview',
+                            'background_check', 'mcu_simper' => 'Tahap Verifikasi',
+                            'offering', 'hiring_decision' => 'Tahap Penawaran',
+                            'pkwt', 'hired' => 'Diterima',
+                            'rejected' => 'Tidak Dilanjutkan',
+                            'withdrawn' => 'Lamaran Dibatalkan',
+                            default => 'Lamaran Sedang Diproses',
+                        };
+                    @endphp
+                    <div class="rounded-lg border p-4">
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p class="font-semibold text-slate-900">{{ $application->jobPosting?->position_name ?? '-' }}</p>
+                                <p class="mt-1 text-sm text-slate-600">{{ $safeStatus }}</p>
+                                <p class="mt-1 text-xs text-slate-500">Tanggal lamar: {{ $application->created_at?->format('d M Y') }}</p>
+                            </div>
+                            <a href="{{ route('candidate.applications.show', $application) }}" class="text-sm font-semibold text-blue-600 hover:text-blue-700">Lihat Detail</a>
+                        </div>
+                    </div>
+                @endforeach
             </div>
         @endif
     </div>

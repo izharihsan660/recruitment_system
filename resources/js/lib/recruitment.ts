@@ -44,6 +44,7 @@ export interface RecruitmentRequest {
     min_education?: string;
     min_experience?: string;
     required_skills?: string;
+    requirements?: string;
     age_min?: number | null;
     age_max?: number | null;
     gender?: string | null;

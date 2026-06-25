@@ -3,7 +3,7 @@
 @section('content')
 @php
     $portalStatus = match ($application->status) {
-        'applied', 'screening', 'test' => 'Lamaran Sedang Diproses',
+        'applied', 'screening', 'test', 'test_psikotes' => 'Lamaran Sedang Diproses',
         'interview_hr', 'interview_user' => 'Tahap Interview',
         'background_check', 'mcu_simper' => 'Tahap Verifikasi',
         'offering', 'hiring_decision' => 'Tahap Penawaran',
@@ -27,22 +27,14 @@
             <div class="rounded-xl border bg-white p-6 shadow-sm">
                 <p class="text-sm font-semibold text-blue-600">Detail Lamaran</p>
                 <h1 class="mt-2 text-3xl font-bold text-slate-900">{{ $application->jobPosting?->position_name ?? '-' }}</h1>
+                <div class="mt-5 rounded-lg border border-blue-100 bg-blue-50 p-4">
+                    <p class="text-sm font-semibold text-blue-700">Status Saat Ini</p>
+                    <p class="mt-1 text-xl font-bold text-blue-950">{{ $portalStatus }}</p>
+                </div>
                 <div class="mt-5 grid gap-4 text-sm md:grid-cols-2">
-                    <div>
-                        <p class="text-slate-500">PT</p>
-                        <p class="font-semibold text-slate-900">{{ $application->jobPosting?->entity?->name ?? '-' }}</p>
-                    </div>
-                    <div>
-                        <p class="text-slate-500">Status</p>
-                        <p class="font-semibold text-slate-900">{{ $portalStatus }}</p>
-                    </div>
                     <div>
                         <p class="text-slate-500">Tanggal Lamar</p>
                         <p class="font-semibold text-slate-900">{{ $application->created_at?->format('d M Y') }}</p>
-                    </div>
-                    <div>
-                        <p class="text-slate-500">Departemen</p>
-                        <p class="font-semibold text-slate-900">{{ $application->jobPosting?->department?->name ?? '-' }}</p>
                     </div>
                 </div>
             </div>
@@ -53,18 +45,24 @@
                     <p class="mt-4 rounded-lg border border-dashed p-4 text-sm text-slate-600">Belum ada update pipeline.</p>
                 @else
                     <div class="mt-5 space-y-4">
-                        @foreach($application->pipelineLogs->sortByDesc('created_at') as $log)
+                        @foreach($application->pipelineLogs->sortByDesc('created_at')->take(5) as $log)
+                            @php
+                                $timelineLabel = match ($log->to_stage) {
+                                    'applied', 'screening', 'test', 'test_psikotes' => 'Lamaran Sedang Diproses',
+                                    'interview_hr', 'interview_user' => 'Tahap Interview',
+                                    'background_check', 'mcu_simper' => 'Tahap Verifikasi',
+                                    'offering', 'hiring_decision' => 'Tahap Penawaran',
+                                    'pkwt', 'hired' => 'Diterima',
+                                    'rejected' => 'Tidak Dilanjutkan',
+                                    'withdrawn' => 'Lamaran Dibatalkan',
+                                    default => 'Lamaran Sedang Diproses',
+                                };
+                            @endphp
                             <div class="rounded-lg border p-4">
                                 <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                                    <p class="font-semibold text-slate-900">{{ str($log->to_stage)->replace('_', ' ')->title() }}</p>
+                                    <p class="font-semibold text-slate-900">{{ $timelineLabel }}</p>
                                     <p class="text-xs text-slate-500">{{ $log->created_at?->format('d M Y H:i') }}</p>
                                 </div>
-                                @if($log->from_stage)
-                                    <p class="mt-1 text-sm text-slate-600">Dari {{ str($log->from_stage)->replace('_', ' ')->title() }} ke {{ str($log->to_stage)->replace('_', ' ')->title() }}</p>
-                                @endif
-                                @if($log->notes)
-                                    <p class="mt-2 text-sm text-slate-700">{{ $log->notes }}</p>
-                                @endif
                             </div>
                         @endforeach
                     </div>
