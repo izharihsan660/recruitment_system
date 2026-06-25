@@ -1,9 +1,13 @@
+import { FieldError, FormLabel } from '@/Components/shared/ui';
+
 interface ScoreRatingProps {
     label: string;
     value: number | null;
     onChange: (value: number) => void;
     readOnly?: boolean;
     description?: string;
+    required?: boolean;
+    error?: string;
 }
 
 const labels: Record<number, string> = {
@@ -20,22 +24,25 @@ export default function ScoreRating({
     onChange,
     readOnly = false,
     description,
+    required = false,
+    error,
 }: ScoreRatingProps): JSX.Element {
     if (readOnly) {
         return (
             <div className="rounded-md border border-slate-200 p-3">
-                <p className="text-sm font-medium text-slate-700">{label}</p>
+                <FormLabel required={required}>{label}</FormLabel>
                 {description && <p className="mt-1 text-xs text-slate-500">{description}</p>}
                 <span className="mt-2 inline-flex rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700">
                     {value ? `${value} - ${labels[value]}` : 'Belum dinilai'}
                 </span>
+                <FieldError message={error} />
             </div>
         );
     }
 
     return (
         <div>
-            <p className="text-sm font-medium text-slate-700">{label}</p>
+            <FormLabel required={required}>{label}</FormLabel>
             {description && <p className="mt-1 text-xs text-slate-500">{description}</p>}
             <div className="mt-2 flex flex-wrap gap-2">
                 {[1, 2, 3, 4, 5].map((score) => (
@@ -55,6 +62,7 @@ export default function ScoreRating({
                 ))}
             </div>
             <p className="mt-1 text-xs text-slate-500">{value ? labels[value] : 'Pilih nilai 1-5'}</p>
+            <FieldError message={error} />
         </div>
     );
 }

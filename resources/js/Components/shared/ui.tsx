@@ -63,6 +63,25 @@ export function EmptyState({ title, description }: { title: string; description?
     );
 }
 
+export function GlobalErrorAlert({ errors }: { errors: Record<string, string> }): JSX.Element | null {
+    const messages = Object.values(errors).filter(Boolean);
+
+    if (messages.length === 0) {
+        return null;
+    }
+
+    return (
+        <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <p className="font-semibold">Periksa kembali data berikut:</p>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+                {messages.map((message) => (
+                    <li key={message}>{message}</li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
 export function FieldError({ message }: { message?: string }): JSX.Element | null {
     if (!message) {
         return null;

@@ -1,11 +1,13 @@
-import { Button, Card, FormLabel, PageHeader, TextInput } from '@/Components/shared/ui';
+import { Button, Card, FieldError, FormLabel, GlobalErrorAlert, PageHeader, TextInput } from '@/Components/shared/ui';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { ApplicationItem } from '@/lib/recruitment';
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { PageProps } from '@/types';
 import { FormEvent } from 'react';
 
 export default function Pkwt({ application }: { application: ApplicationItem }): JSX.Element {
-    const pkwt = application.pkwt_contract as any;
+    const { errors } = usePage<PageProps>().props;
+    const pkwt = application.pkwt_contract as (ApplicationItem['pkwt_contract'] & { start_date?: string | null; end_date?: string | null; candidate_signing_url?: string | null; company_signing_url?: string | null; sharepoint_url?: string | null; archive_status?: string | null }) | null | undefined;
     const form = useForm({ start_date: pkwt?.start_date ?? '', end_date: pkwt?.end_date ?? '' });
     const isDraft = pkwt?.status === 'draft';
 
@@ -28,22 +30,25 @@ export default function Pkwt({ application }: { application: ApplicationItem }):
             <PageHeader
                 title="PKWT / Kontrak Kerja"
                 description={`${application.candidate?.name ?? 'Kandidat'} - ${application.job_posting?.position_name ?? ''}`}
-                actions={<Link className="text-sm text-blue-600" href="/pipeline">Kembali</Link>}
+                actions={<Link className="text-sm text-blue-600" href="/pipeline">Kembali ke pipeline</Link>}
             />
+            <GlobalErrorAlert errors={errors} />
             <div className="space-y-4">
                 <Card className="space-y-4 p-6">
                     <p className="text-sm text-slate-600">Data utama otomatis dari offering: posisi, department, lokasi, kompensasi.</p>
                     {!pkwt?.id ? (
-                        <Button onClick={create}>Buat Draft PKWT</Button>
+                        <Button type="button" onClick={create}>Buat Draft PKWT</Button>
                     ) : (
                         <form onSubmit={submit} className="grid gap-4 md:grid-cols-2">
                             <div>
-                                <FormLabel>Tanggal Mulai</FormLabel>
+                                <FormLabel required>Tanggal Mulai</FormLabel>
                                 <TextInput type="date" value={form.data.start_date} onChange={(event) => form.setData('start_date', event.target.value)} />
+                                <FieldError message={form.errors.start_date} />
                             </div>
                             <div>
-                                <FormLabel>Tanggal Selesai</FormLabel>
+                                <FormLabel required>Tanggal Selesai</FormLabel>
                                 <TextInput type="date" value={form.data.end_date} onChange={(event) => form.setData('end_date', event.target.value)} />
+                                <FieldError message={form.errors.end_date} />
                             </div>
                             <div className="flex items-end gap-2 md:col-span-2">
                                 <a className="rounded-md bg-slate-100 px-3 py-2 text-sm" href={`/hr/pkwt/${application.id}/preview`} target="_blank">Preview PDF</a>
