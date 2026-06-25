@@ -68,27 +68,49 @@ class AdminSprintOneTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_approval_chain_requires_last_level_hr_manager_role(): void
+    public function test_approval_chain_allows_incomplete_user_level_while_building_chain(): void
     {
         $admin = $this->adminUser();
         $department = Department::factory()->create();
 
         $this->actingAs($admin)
-            ->postJson('/admin/approval-chains', [
+            ->post('/admin/approval-chains', [
                 'department_id' => $department->id,
                 'level' => 1,
                 'type' => 'user',
                 'approver_user_id' => $admin->id,
             ])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors('approver_role');
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Approval Chain berhasil dibuat.');
+
+        $this->assertDatabaseHas('approval_chains', [
+            'department_id' => $department->id,
+            'level' => 1,
+            'type' => 'user',
+            'approver_user_id' => $admin->id,
+            'approver_role' => null,
+        ]);
+
+        $hrDepartment = Department::factory()->create();
 
         $this->actingAs($admin)
             ->post('/admin/approval-chains', [
-                'department_id' => $department->id,
+                'department_id' => $hrDepartment->id,
                 'level' => 1,
                 'type' => 'role',
                 'approver_role' => Roles::HrManager,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Approval Chain berhasil dibuat.');
+
+        $anotherDepartment = Department::factory()->create();
+
+        $this->actingAs($admin)
+            ->post('/admin/approval-chains', [
+                'department_id' => $anotherDepartment->id,
+                'level' => 1,
+                'type' => 'role',
+                'approver_role' => Roles::HrRecruiter,
             ])
             ->assertRedirect()
             ->assertSessionHas('success', 'Approval Chain berhasil dibuat.');

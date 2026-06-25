@@ -44,9 +44,7 @@ class RecruitmentRequestService
                 ->orderBy('level')
                 ->get();
 
-            if ($chains->isEmpty()) {
-                throw ValidationException::withMessages(['department_id' => 'Approval chain department belum tersedia.']);
-            }
+            $this->ensureApprovalChainCanSubmit($chains);
 
             $fpk->update(['status' => 'requested']);
             $fpk->approvalRecords()->delete();
@@ -66,6 +64,32 @@ class RecruitmentRequestService
 
         $fpk->refresh();
         $this->notificationService->notifyFpkSubmitted($fpk, $this->approversForCurrentLevel($fpk), $this->notificationService->hrUsers());
+    }
+
+    /**
+     * @param  Collection<int, ApprovalChain>  $chains
+     */
+    private function ensureApprovalChainCanSubmit(Collection $chains): void
+    {
+        if ($chains->isEmpty()) {
+            throw ValidationException::withMessages(['department_id' => 'Approval chain department belum tersedia.']);
+        }
+
+        if ($chains->count() > 3) {
+            throw ValidationException::withMessages(['level' => 'Maksimal 3 approval level per department.']);
+        }
+
+        $expectedLevels = range(1, $chains->count());
+        if ($chains->pluck('level')->values()->all() !== $expectedLevels) {
+            throw ValidationException::withMessages(['level' => 'Level approval harus berurutan tanpa gap.']);
+        }
+
+        $lastChain = $chains->last();
+        if ($lastChain->type !== 'role' || ! in_array($lastChain->approver_role, [Roles::HrManager, Roles::HrRecruiter], true)) {
+            throw ValidationException::withMessages([
+                'approver_role' => 'Level terakhir harus bertipe role hr_manager atau hr_recruiter.',
+            ]);
+        }
     }
 
     public function approve(RecruitmentRequest $fpk, User $actor, ?string $comment): void

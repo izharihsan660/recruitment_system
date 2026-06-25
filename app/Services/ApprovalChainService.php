@@ -60,16 +60,14 @@ class ApprovalChainService extends AdminCrudService
      */
     private function ensureChainHasValidShape(Collection $chains): void
     {
-        if ($chains->isEmpty()) {
-            throw ValidationException::withMessages([
-                'department_id' => 'Setiap department minimal punya 1 approval level.',
-            ]);
-        }
-
         if ($chains->count() > 3) {
             throw ValidationException::withMessages([
                 'level' => 'Maksimal 3 approval level per department.',
             ]);
+        }
+
+        if ($chains->isEmpty()) {
+            return;
         }
 
         $expectedLevels = range(1, $chains->count());
@@ -80,16 +78,16 @@ class ApprovalChainService extends AdminCrudService
         }
 
         $lastChain = $chains->last();
-        if ($lastChain->type !== 'role' || $lastChain->approver_role !== Roles::HrManager || $lastChain->approver_user_id !== null) {
+        if ($lastChain->type === 'role' && ! in_array($lastChain->approver_role, [Roles::HrManager, Roles::HrRecruiter], true)) {
             throw ValidationException::withMessages([
-                'approver_role' => 'Level terakhir harus bertipe role hr_manager.',
+                'approver_role' => 'Level terakhir harus bertipe role hr_manager atau hr_recruiter.',
             ]);
         }
 
-        $chains->slice(0, -1)->each(function (ApprovalChain $chain): void {
-            if ($chain->type !== 'user' || $chain->approver_user_id === null || $chain->approver_role !== null) {
+        $chains->each(function (ApprovalChain $chain): void {
+            if ($chain->type === 'role' && ! in_array($chain->approver_role, [Roles::HrManager, Roles::HrRecruiter], true)) {
                 throw ValidationException::withMessages([
-                    'approver_user_id' => 'Level sebelum terakhir harus bertipe user.',
+                    'approver_role' => 'Level terakhir harus bertipe role hr_manager atau hr_recruiter.',
                 ]);
             }
         });

@@ -90,6 +90,41 @@ class FpkWorkflowTest extends TestCase
         $this->assertSame(['approved', 'approved'], $fpk->approvalRecords()->orderBy('level')->pluck('action')->all());
     }
 
+    public function test_fpk_submit_requires_final_approval_level_to_be_hr_role(): void
+    {
+        ApprovalChain::query()
+            ->where('department_id', $this->department->id)
+            ->where('level', 2)
+            ->delete();
+
+        $fpk = $this->createFpk();
+
+        $this->actingAs($this->requester)
+            ->postJson(route('fpk.submit', $fpk))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'approver_role' => 'Level terakhir harus bertipe role hr_manager atau hr_recruiter.',
+            ]);
+
+        $this->assertSame('draft', $fpk->refresh()->status);
+    }
+
+    public function test_fpk_submit_requires_approval_chain(): void
+    {
+        ApprovalChain::query()
+            ->where('department_id', $this->department->id)
+            ->delete();
+
+        $fpk = $this->createFpk();
+
+        $this->actingAs($this->requester)
+            ->postJson(route('fpk.submit', $fpk))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('department_id');
+
+        $this->assertSame('draft', $fpk->refresh()->status);
+    }
+
     public function test_fpk_draft_submit_reject_saves_comment_and_rejected_status(): void
     {
         $fpk = $this->submittedFpk();
