@@ -206,7 +206,7 @@ Route::middleware(['auth', 'active'])->group(function () {
                     ->whereNotIn('status', ['rejected', 'withdrawn'])
                     ->latest()
                     ->get()
-            ),
+            )->resolve(),
             'jobPostings' => JobPosting::query()->where('status', 'open')->orderBy('position_name')->get(['id', 'position_name']),
             'departments' => Department::query()->orderBy('name')->get(['id', 'name']),
             'sources' => CandidateSource::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),

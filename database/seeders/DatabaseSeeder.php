@@ -25,39 +25,59 @@ class DatabaseSeeder extends Seeder
             ['api_key' => '', 'webhook_secret' => null, 'is_active' => true],
         );
 
-        User::factory()->create([
-            'name' => 'Super Admin',
-            'username' => 'superadmin',
-            'email' => 'superadmin@example.com',
-            'password' => bcrypt('123123'),
-        ])->assignRole(Roles::Admin);
+        User::firstOrCreate(
+            ['email' => 'superadmin@example.com'],
+            [
+                'name' => 'Super Admin',
+                'username' => 'superadmin',
+                'email_verified_at' => now(),
+                'password' => bcrypt('123123'),
+                'is_active' => true,
+            ],
+        )->syncRoles(Roles::Admin);
 
-        User::factory()->create([
-            'name' => 'HR Recruiter',
-            'username' => 'hrrecruiter',
-            'email' => 'hr@example.com',
-            'password' => bcrypt('123123'),
-        ])->assignRole(Roles::HrRecruiter);
+        User::firstOrCreate(
+            ['email' => 'hr@example.com'],
+            [
+                'name' => 'HR Recruiter',
+                'username' => 'hrrecruiter',
+                'email_verified_at' => now(),
+                'password' => bcrypt('123123'),
+                'is_active' => true,
+            ],
+        )->syncRoles(Roles::HrRecruiter);
 
-        User::factory()->create([
-            'name' => 'HR Manager',
-            'username' => 'hrmanager',
-            'email' => 'hrmanager@example.com',
-            'password' => bcrypt('123123'),
-        ])->assignRole(Roles::HrManager);
+        User::firstOrCreate(
+            ['email' => 'hrmanager@example.com'],
+            [
+                'name' => 'HR Manager',
+                'username' => 'hrmanager',
+                'email_verified_at' => now(),
+                'password' => bcrypt('123123'),
+                'is_active' => true,
+            ],
+        )->syncRoles(Roles::HrManager);
 
-        User::factory()->create([
-            'name' => 'Hiring Manager',
-            'username' => 'hiringmanager',
-            'email' => 'hiring@example.com',
-            'password' => bcrypt('123123'),
-        ])->assignRole(Roles::HiringManager);
+        User::firstOrCreate(
+            ['email' => 'hiring@example.com'],
+            [
+                'name' => 'Hiring Manager',
+                'username' => 'hiringmanager',
+                'email_verified_at' => now(),
+                'password' => bcrypt('123123'),
+                'is_active' => true,
+            ],
+        )->syncRoles(Roles::HiringManager);
 
-        User::factory()->create([
-            'name' => 'Approver',
-            'username' => 'approver',
-            'email' => 'approver@example.com',
-            'password' => bcrypt('123123'),
-        ])->assignRole(Roles::Approver);
+        User::firstOrCreate(
+            ['email' => 'approver@example.com'],
+            [
+                'name' => 'Approver',
+                'username' => 'approver',
+                'email_verified_at' => now(),
+                'password' => bcrypt('123123'),
+                'is_active' => true,
+            ],
+        )->syncRoles(Roles::Approver);
     }
 }
