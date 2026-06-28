@@ -1,6 +1,7 @@
 import { Badge, Button, Card, FieldError, FormLabel, GlobalErrorAlert, PageHeader, SelectInput, TextArea, TextInput } from '@/Components/shared/ui';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { ApplicationItem } from '@/lib/recruitment';
+import { toLocalDatetime } from '@/lib/utils';
 import { PageProps } from '@/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { FormEvent } from 'react';
@@ -43,7 +44,7 @@ export default function McuSimper({ application, record, canProceed }: Props): J
 function Section({ type, title, application, record }: { type: SectionType; title: string; application: ApplicationItem; record: McuSimperRecord | null }): JSX.Element {
     const scheduledAtField = `${type}_scheduled_at` as const;
     const locationField = `${type}_location` as const;
-    const schedule = useForm<ScheduleData>({ [scheduledAtField]: '', [locationField]: '' } as ScheduleData);
+    const schedule = useForm<ScheduleData>({ [scheduledAtField]: toLocalDatetime(record?.[scheduledAtField]), [locationField]: record?.[locationField] ?? '' } as ScheduleData);
     const result = useForm<ResultData>({ result_file: null, status: 'passed', notes: '', rejection_reason: '' });
     const status = record?.[`${type}_status`];
     const canInputSchedule = status === 'pending';

@@ -2,6 +2,7 @@ import ScoreRating from '@/Components/ScoreRating';
 import { Button, Card, FieldError, FormLabel, GlobalErrorAlert, PageHeader, SelectInput, TextArea, TextInput } from '@/Components/shared/ui';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { ApplicationItem, BasicUser, rows } from '@/lib/recruitment';
+import { toLocalDatetime } from '@/lib/utils';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { PageProps } from '@/types';
 
@@ -10,7 +11,7 @@ interface InterviewRecord { id?: number; scheduled_at?: string; location?: strin
 export default function InterviewUser({ application, interview, interviewers, canSchedule, canScorecard }: { application: ApplicationItem; interview?: InterviewRecord | null; interviewers: BasicUser[] | { data: BasicUser[] }; canSchedule: boolean; canScorecard: boolean }): JSX.Element {
     const { errors } = usePage<PageProps>().props;
     const users = rows(interviewers);
-    const scheduleForm = useForm({ scheduled_at: interview?.scheduled_at ?? '', location: interview?.location ?? '', interviewer_id: String(interview?.interviewer?.id ?? users[0]?.id ?? '') });
+    const scheduleForm = useForm({ scheduled_at: toLocalDatetime(interview?.scheduled_at), location: interview?.location ?? '', interviewer_id: String(interview?.interviewer?.id ?? users[0]?.id ?? '') });
     const scoreForm = useForm({ score_technical: interview?.score_technical ?? null as number | null, score_experience: interview?.score_experience ?? null as number | null, score_problem_solving: interview?.score_problem_solving ?? null as number | null, score_team_fit: interview?.score_team_fit ?? null as number | null, recommendation: interview?.recommendation ?? 'accepted', rejection_reason: interview?.rejection_reason ?? '', notes: interview?.notes ?? '' });
     const setScore = (field: 'score_technical' | 'score_experience' | 'score_problem_solving' | 'score_team_fit', value: number) => scoreForm.setData(field, value);
 

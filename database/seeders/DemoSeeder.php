@@ -22,7 +22,6 @@ use App\Models\UserInterview;
 use App\Support\Roles;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Hash;
 
 class DemoSeeder extends Seeder
 {
@@ -91,7 +90,7 @@ class DemoSeeder extends Seeder
                     'name' => $record['name'],
                     'username' => $record['username'],
                     'department_id' => $departmentId,
-                    'password' => Hash::make('password'),
+                    'password' => bcrypt('123123'),
                     'email_verified_at' => now(),
                     'is_active' => true,
                 ],
@@ -260,7 +259,7 @@ class DemoSeeder extends Seeder
                 ['email' => $email],
                 [
                     'name' => $name,
-                    'password' => Hash::make('password'),
+                    'password' => bcrypt('123123'),
                     'phone' => '08'.fake()->numerify('##########'),
                     'address' => 'Balikpapan',
                     'birth_date' => $now->copy()->subYears(28)->toDateString(),
@@ -275,7 +274,7 @@ class DemoSeeder extends Seeder
 
             $candidate->forceFill([
                 'name' => $name,
-                'password' => Hash::make('password'),
+                'password' => bcrypt('123123'),
                 'cv_path' => "demo/cv/{$email}.pdf",
                 'cv_original_name' => "CV {$name}.pdf",
                 'email_verified_at' => $candidate->email_verified_at ?? $now,
@@ -455,7 +454,7 @@ class DemoSeeder extends Seeder
         foreach ($records as $record) {
             $candidate = Candidate::query()->firstOrCreate(
                 ['email' => $record['email']],
-                ['name' => $record['name'], 'password' => Hash::make('password'), 'cv_path' => "demo/cv/{$record['email']}.pdf", 'cv_original_name' => "CV {$record['name']}.pdf", 'email_verified_at' => $now],
+                ['name' => $record['name'], 'password' => bcrypt('123123'), 'cv_path' => "demo/cv/{$record['email']}.pdf", 'cv_original_name' => "CV {$record['name']}.pdf", 'email_verified_at' => $now],
             );
 
             $application = Application::query()->firstOrCreate(

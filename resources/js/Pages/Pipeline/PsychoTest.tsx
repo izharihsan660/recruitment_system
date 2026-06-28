@@ -1,6 +1,7 @@
 import { Badge, Button, Card, FieldError, FormLabel, GlobalErrorAlert, PageHeader, TextArea, TextInput } from '@/Components/shared/ui';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { ApplicationItem } from '@/lib/recruitment';
+import { toLocalDatetime } from '@/lib/utils';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { PageProps } from '@/types';
 
@@ -15,7 +16,7 @@ interface PsychoTestRecord {
 
 export default function PsychoTest({ application, psychoTest, notRequired }: { application: ApplicationItem; psychoTest?: PsychoTestRecord | null; notRequired: boolean }): JSX.Element {
     const { errors } = usePage<PageProps>().props;
-    const scheduleForm = useForm({ test_type: psychoTest?.test_type ?? '', scheduled_at: psychoTest?.scheduled_at ?? '', notes: psychoTest?.notes ?? '' });
+    const scheduleForm = useForm({ test_type: psychoTest?.test_type ?? '', scheduled_at: toLocalDatetime(psychoTest?.scheduled_at), notes: psychoTest?.notes ?? '' });
     const resultForm = useForm({ decision: psychoTest?.decision ?? 'passed', notes: psychoTest?.notes ?? '', rejection_reason: psychoTest?.rejection_reason ?? '' });
 
     return (

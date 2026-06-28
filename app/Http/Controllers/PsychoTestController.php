@@ -22,7 +22,7 @@ class PsychoTestController extends Controller
 
         return Inertia::render('Pipeline/PsychoTest', [
             'application' => (new ApplicationResource($application))->resolve(),
-            'psychoTest' => $application->psychoTest ? new PsychoTestResource($application->psychoTest) : null,
+            'psychoTest' => $application->psychoTest ? (new PsychoTestResource($application->psychoTest))->resolve() : null,
             'notRequired' => $application->jobPosting?->test_required === false,
         ]);
     }

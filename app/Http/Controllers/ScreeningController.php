@@ -21,7 +21,7 @@ class ScreeningController extends Controller
 
         return Inertia::render('Pipeline/Screening', [
             'application' => (new ApplicationResource($application))->resolve(),
-            'screening' => $application->screening ? new ScreeningResource($application->screening) : null,
+            'screening' => $application->screening ? (new ScreeningResource($application->screening))->resolve() : null,
         ]);
     }
 

@@ -2,6 +2,7 @@ import ScoreRating from '@/Components/ScoreRating';
 import { Button, Card, FieldError, FormLabel, GlobalErrorAlert, PageHeader, SelectInput, TextArea, TextInput } from '@/Components/shared/ui';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { ApplicationItem, BasicUser, rows } from '@/lib/recruitment';
+import { toLocalDatetime } from '@/lib/utils';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { PageProps } from '@/types';
 
@@ -10,7 +11,7 @@ interface InterviewRecord { id?: number; scheduled_at?: string; interviewer?: Ba
 export default function InterviewHR({ application, interview, interviewers }: { application: ApplicationItem; interview?: InterviewRecord | null; interviewers: BasicUser[] | { data: BasicUser[] } }): JSX.Element {
     const { errors } = usePage<PageProps>().props;
     const users = rows(interviewers);
-    const scheduleForm = useForm({ scheduled_at: interview?.scheduled_at ?? '', interviewer_id: String(interview?.interviewer?.id ?? users[0]?.id ?? '') });
+    const scheduleForm = useForm({ scheduled_at: toLocalDatetime(interview?.scheduled_at), interviewer_id: String(interview?.interviewer?.id ?? users[0]?.id ?? '') });
     const scoreForm = useForm({ score_communication: interview?.score_communication ?? null as number | null, score_personality: interview?.score_personality ?? null as number | null, score_motivation: interview?.score_motivation ?? null as number | null, score_attitude: interview?.score_attitude ?? null as number | null, score_culture_fit: interview?.score_culture_fit ?? null as number | null, strengths: interview?.strengths ?? '', weaknesses: interview?.weaknesses ?? '', salary_expectation: interview?.salary_expectation ?? '', recommendation: interview?.recommendation ?? 'recommended', notes: interview?.notes ?? '' });
     const setScore = (field: 'score_communication' | 'score_personality' | 'score_motivation' | 'score_attitude' | 'score_culture_fit', value: number) => scoreForm.setData(field, value);
 
