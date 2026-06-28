@@ -24,7 +24,7 @@ class HrInterviewController extends Controller
         $application->load(['candidate', 'jobPosting', 'hrInterview.interviewer']);
 
         return Inertia::render('Pipeline/InterviewHR', [
-            'application' => new ApplicationResource($application),
+            'application' => (new ApplicationResource($application))->resolve(),
             'interview' => $application->hrInterview ? new HrInterviewResource($application->hrInterview) : null,
             'interviewers' => UserResource::collection(User::role([Roles::HrRecruiter, Roles::HrManager])->where('is_active', true)->orderBy('name')->get()),
         ]);

@@ -41,9 +41,9 @@ class PipelineController extends Controller
         return ApplicationResource::collection($query->paginate());
     }
 
-    public function show(Application $pipeline): ApplicationResource
+    public function show(Application $pipeline): array
     {
-        return new ApplicationResource($pipeline->load(['candidate', 'jobPosting', 'pipelineLogs', 'screening', 'psychoTest', 'hrInterview', 'userInterview', 'backgroundCheck', 'offeringLetter', 'pkwtContract']));
+        return (new ApplicationResource($pipeline->load(['candidate', 'jobPosting', 'pipelineLogs', 'screening', 'psychoTest', 'hrInterview', 'userInterview', 'backgroundCheck', 'offeringLetter', 'pkwtContract'])))->resolve();
     }
 
     public function move(Application $pipeline): RedirectResponse

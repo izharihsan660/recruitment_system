@@ -20,7 +20,7 @@ class ScreeningController extends Controller
         $application->load(['candidate', 'jobPosting', 'screening.reviewer']);
 
         return Inertia::render('Pipeline/Screening', [
-            'application' => new ApplicationResource($application),
+            'application' => (new ApplicationResource($application))->resolve(),
             'screening' => $application->screening ? new ScreeningResource($application->screening) : null,
         ]);
     }

@@ -24,7 +24,7 @@ class UserInterviewController extends Controller
         $application->load(['candidate', 'jobPosting', 'userInterview.interviewer']);
 
         return Inertia::render('Pipeline/InterviewUser', [
-            'application' => new ApplicationResource($application),
+            'application' => (new ApplicationResource($application))->resolve(),
             'interview' => $application->userInterview ? new UserInterviewResource($application->userInterview) : null,
             'interviewers' => UserResource::collection(User::role(Roles::HiringManager)->where('is_active', true)->orderBy('name')->get()),
             'canSchedule' => request()->user()->hasAnyRole([Roles::HrRecruiter, Roles::HrManager]),

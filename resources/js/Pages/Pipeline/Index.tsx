@@ -399,8 +399,6 @@ function RejectBox({ id }: { id: number }): JSX.Element {
 }
 
 function PipelineStageActions({ application }: { application: ApplicationItem }): JSX.Element | null {
-    console.log('application id:', application?.id, 'full:', application);
-
     if (inactiveCandidateStatuses.includes(application.status ?? '')) {
         return null;
     }
