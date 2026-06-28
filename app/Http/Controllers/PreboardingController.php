@@ -19,7 +19,7 @@ class PreboardingController extends Controller
 
     public function index(): Response
     {
-        return Inertia::render('Employees/Index', ['employees' => Employee::query()->with(['department', 'entity'])->whereHas('preboardingChecklist')->latest()->paginate(10)]);
+        return Inertia::render('Employees/Index', ['employees' => Employee::query()->with(['department', 'entity'])->where('status', 'active')->latest()->paginate(10)]);
     }
 
     public function show(Employee $employee): Response

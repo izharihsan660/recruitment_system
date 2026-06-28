@@ -63,7 +63,7 @@ class DocusealConfigController extends Controller
 
     public function testConnection(TestDocusealConnectionRequest $request, DocusealConfig $docusealConfig): JsonResponse
     {
-        Http::withToken($docusealConfig->api_key)
+        Http::withHeaders(['X-Auth-Token' => $docusealConfig->api_key])
             ->acceptJson()
             ->timeout(10)
             ->get(rtrim($docusealConfig->api_url, '/').'/submissions', ['limit' => 1])

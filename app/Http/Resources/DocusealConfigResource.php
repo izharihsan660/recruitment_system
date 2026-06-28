@@ -12,6 +12,8 @@ class DocusealConfigResource extends JsonResource
         return [
             'id' => $this->id,
             'api_url' => $this->api_url,
+            'offering_template_id' => $this->offering_template_id,
+            'pkwt_template_id' => $this->pkwt_template_id,
             'has_api_key' => filled($this->api_key),
             'has_webhook_secret' => filled($this->webhook_secret),
             'is_active' => $this->is_active,

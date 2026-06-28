@@ -16,6 +16,8 @@ class DocusealConfig extends Model
         'api_url',
         'api_key',
         'webhook_secret',
+        'offering_template_id',
+        'pkwt_template_id',
         'is_active',
     ];
 

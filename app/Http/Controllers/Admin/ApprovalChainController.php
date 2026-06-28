@@ -17,7 +17,7 @@ class ApprovalChainController extends Controller
 
     public function index(): AnonymousResourceCollection
     {
-        return ApprovalChainResource::collection(ApprovalChain::query()->with(['department.entity', 'approverUser.roles'])->orderBy('department_id')->orderBy('level')->paginate());
+        return ApprovalChainResource::collection(ApprovalChain::query()->with(['department.entity', 'approverUser.roles'])->withCount('approvalRecords')->orderBy('department_id')->orderBy('level')->paginate());
     }
 
     public function store(StoreApprovalChainRequest $request): RedirectResponse
@@ -29,7 +29,7 @@ class ApprovalChainController extends Controller
 
     public function show(ApprovalChain $approvalChain): ApprovalChainResource
     {
-        return new ApprovalChainResource($approvalChain->load(['department.entity', 'approverUser.roles']));
+        return new ApprovalChainResource($approvalChain->load(['department.entity', 'approverUser.roles'])->loadCount('approvalRecords'));
     }
 
     public function update(UpdateApprovalChainRequest $request, ApprovalChain $approvalChain): RedirectResponse

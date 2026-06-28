@@ -14,77 +14,76 @@ import { PageProps } from '@/types';
 
 interface KpiCardItem {
     label: string;
-    value: number;
+    value: number | undefined;
     changeText?: string;
     icon: JSX.Element;
     highlightDanger?: boolean;
     href?: string;
 }
 
-const mockHrKpis: KpiCardItem[] = [
+const hrKpis: KpiCardItem[] = [
     {
         label: 'Total FPK Aktif',
-        value: 18,
+        value: undefined,
         icon: <ClipboardList className="h-5 w-5" />,
-        changeText: '+2 dari bulan lalu',
     },
     {
         label: 'Menunggu Approval',
-        value: 6,
+        value: undefined,
         icon: <GitPullRequest className="h-5 w-5" />,
     },
     {
         label: 'Lowongan Aktif',
-        value: 12,
+        value: undefined,
         icon: <Briefcase className="h-5 w-5" />,
     },
     {
         label: 'Kandidat di Pipeline',
-        value: 77,
+        value: undefined,
         icon: <Users className="h-5 w-5" />,
     },
     {
         label: 'Hired Bulan Ini',
-        value: 9,
+        value: undefined,
         icon: <UserCheck className="h-5 w-5" />,
     },
     {
         label: 'Ukuran Talent Pool',
-        value: 143,
+        value: undefined,
         icon: <Users className="h-5 w-5" />,
     },
     {
         label: 'Probation Berjalan',
-        value: 11,
+        value: undefined,
         icon: <Hourglass className="h-5 w-5" />,
     },
     {
         label: 'Probation Jatuh Tempo ≤ 7 Hari',
-        value: 3,
+        value: undefined,
         icon: <Timer className="h-5 w-5" />,
         highlightDanger: true,
     },
 ];
 
-const mockHiringManagerKpis: KpiCardItem[] = [
+const hiringManagerKpis: KpiCardItem[] = [
     {
         label: 'FPK Saya',
-        value: 4,
+        value: undefined,
         icon: <ClipboardList className="h-5 w-5" />,
     },
     {
         label: 'Menunggu Approval Saya',
-        value: 2,
+        value: undefined,
         icon: <GitPullRequest className="h-5 w-5" />,
     },
     {
         label: 'Pipeline Dept Saya',
-        value: 19,
+        value: undefined,
         icon: <Users className="h-5 w-5" />,
     },
     {
         label: 'Hired Bulan Ini Dept Saya',
-        value: 2,
+        value: undefined,
         icon: <UserCheck className="h-5 w-5" />,
     },
 ];
@@ -95,9 +94,9 @@ export default function Dashboard({ kpis }: { kpis: Record<string, number> }): J
     const role = auth.user?.roles?.[0] ?? '';
 
     const isHrRole = role === 'hr_recruiter' || role === 'hr_manager' || role === 'admin';
-    const cards = (isHrRole ? mockHrKpis : mockHiringManagerKpis).map((card) => ({
+    const cards = (isHrRole ? hrKpis : hiringManagerKpis).map((card) => ({
         ...card,
-        value: kpis?.[toKpiKey(card.label)] ?? card.value,
+        value: kpis?.[toKpiKey(card.label)] ?? 0,
         href: card.label.startsWith('Probation') ? '/hr/probation' : undefined,
     }));
 
@@ -115,6 +114,8 @@ export default function Dashboard({ kpis }: { kpis: Record<string, number> }): J
 }
 
 function KpiCard({ item }: { item: KpiCardItem }): JSX.Element {
+    const value = item.value ?? 0;
+
     const body = (
         <article
             className={`rounded-lg border bg-white p-4 shadow-sm ${
@@ -131,12 +132,12 @@ function KpiCard({ item }: { item: KpiCardItem }): JSX.Element {
                 <p className="text-xs font-medium text-slate-500">{item.label}</p>
                 <p
                     className={`text-2xl font-bold ${
-                        item.highlightDanger && item.value > 0
+                        item.highlightDanger && value > 0
                             ? 'text-red-600'
                             : 'text-slate-900'
                     }`}
                 >
-                    {item.value}
+                    {value}
                 </p>
             </div>
         </article>

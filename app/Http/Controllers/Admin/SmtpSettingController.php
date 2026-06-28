@@ -36,7 +36,11 @@ class SmtpSettingController extends Controller
 
     public function update(UpdateSmtpSettingRequest $request, SmtpSetting $smtpSetting): RedirectResponse
     {
-        $this->smtpSettingService->update($smtpSetting, $request->validated());
+        $data = collect($request->validated())
+            ->reject(fn ($value, string $key): bool => $key === 'password' && blank($value))
+            ->all();
+
+        $this->smtpSettingService->update($smtpSetting, $data);
 
         return redirect()->back()->with('success', 'Pengaturan SMTP berhasil diperbarui.');
     }

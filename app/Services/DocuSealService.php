@@ -11,7 +11,7 @@ class DocuSealService
 {
     public function createSubmission(array $data): array
     {
-        $response = Http::withToken($this->config()->api_key)
+        $response = Http::withHeaders(['X-Auth-Token' => $this->config()->api_key])
             ->acceptJson()
             ->post($this->baseUrl().'/submissions', $data)
             ->throw()
@@ -26,7 +26,7 @@ class DocuSealService
 
     public function getSubmissionStatus(string $submissionId): array
     {
-        $response = Http::withToken($this->config()->api_key)
+        $response = Http::withHeaders(['X-Auth-Token' => $this->config()->api_key])
             ->acceptJson()
             ->get($this->baseUrl().'/submissions/'.$submissionId)
             ->throw()
@@ -42,7 +42,7 @@ class DocuSealService
 
     public function downloadSignedDocument(string $submissionId): string
     {
-        return Http::withToken($this->config()->api_key)
+        return Http::withHeaders(['X-Auth-Token' => $this->config()->api_key])
             ->get($this->baseUrl().'/submissions/'.$submissionId.'/documents/download')
             ->throw()
             ->body();

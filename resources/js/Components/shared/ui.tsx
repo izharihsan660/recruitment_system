@@ -26,16 +26,21 @@ export const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement> & 
 
 Card.displayName = 'Card';
 
-export function Button({ children, variant = 'primary', className = '', ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'danger' | 'ghost' }): JSX.Element {
+export function Button({ children, variant = 'primary', size = 'md', className = '', ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'danger' | 'destructive' | 'ghost'; size?: 'sm' | 'md' }): JSX.Element {
     const variants = {
         primary: 'bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-300',
         secondary: 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50',
         danger: 'bg-red-600 text-white hover:bg-red-700 disabled:bg-red-300',
+        destructive: 'bg-red-600 text-white hover:bg-red-700 disabled:bg-red-300',
         ghost: 'text-slate-700 hover:bg-slate-100',
+    };
+    const sizes = {
+        sm: 'px-2.5 py-1.5 text-xs',
+        md: 'px-3 py-2 text-sm',
     };
 
     return (
-        <button type="button" {...props} className={`inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed ${variants[variant]} ${className}`}>
+        <button type="button" {...props} className={`inline-flex items-center justify-center rounded-md font-medium transition disabled:cursor-not-allowed ${sizes[size]} ${variants[variant]} ${className}`}>
             {children}
         </button>
     );

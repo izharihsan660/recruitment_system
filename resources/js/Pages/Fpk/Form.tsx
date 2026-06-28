@@ -84,6 +84,14 @@ export default function FpkForm({ mode, fpk, entities, departments }: { mode: 'c
         job_description: fpk?.job_description ?? '',
         facilities: { ...emptyFacilities, ...(fpk?.facilities ?? {}) },
     });
+    const filteredDepartments = departments.filter(
+        (department) => department.entity_id === Number(form.data.entity_id),
+    );
+
+    function handleEntityChange(value: string): void {
+        form.setData('entity_id', value);
+        form.setData('department_id', '');
+    }
 
     function payload() {
         return {
@@ -149,8 +157,8 @@ export default function FpkForm({ mode, fpk, entities, departments }: { mode: 'c
                 <form onSubmit={(event) => event.preventDefault()} className="space-y-4">
                     {step === 0 && (
                         <div className="grid gap-4 md:grid-cols-2">
-                            <div><FormLabel required>PT</FormLabel><SelectInput value={form.data.entity_id} onChange={(event) => form.setData('entity_id', event.target.value)}><option value="">Pilih PT</option>{entities.map((entity) => <option key={entity.id} value={entity.id}>{entity.name}</option>)}</SelectInput><FieldError message={form.errors.entity_id} /></div>
-                            <div><FormLabel required>Departemen</FormLabel><SelectInput value={form.data.department_id} onChange={(event) => form.setData('department_id', event.target.value)}><option value="">Pilih Departemen</option>{departments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</SelectInput><FieldError message={form.errors.department_id} /></div>
+                            <div><FormLabel required>PT</FormLabel><SelectInput value={form.data.entity_id} onChange={(event) => handleEntityChange(event.target.value)}><option value="">Pilih PT</option>{entities.map((entity) => <option key={entity.id} value={entity.id}>{entity.name}</option>)}</SelectInput><FieldError message={form.errors.entity_id} /></div>
+                            <div><FormLabel required>Departemen</FormLabel><SelectInput value={form.data.department_id} onChange={(event) => form.setData('department_id', event.target.value)}><option value="">Pilih Departemen</option>{filteredDepartments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</SelectInput><FieldError message={form.errors.department_id} /></div>
                             <div><FormLabel required>Jabatan Requester</FormLabel><TextInput value={form.data.requester_position} onChange={(event) => form.setData('requester_position', event.target.value)} /><FieldError message={form.errors.requester_position} /></div>
                             <div><FormLabel required>Tanggal</FormLabel><TextInput type="date" value={form.data.requested_at} onChange={(event) => form.setData('requested_at', event.target.value)} /><FieldError message={form.errors.requested_at} /></div>
                         </div>

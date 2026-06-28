@@ -230,7 +230,17 @@ Route::prefix('admin')
             'entities' => Entity::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
         ]))->name('departments.index');
         Route::get('approval-chains', fn () => Inertia::render('Admin/ApprovalChains/Index', [
-            'approvalChains' => ApprovalChain::query()->with(['department.entity', 'approverUser.roles'])->orderBy('department_id')->orderBy('level')->get(),
+            'approvalChains' => ApprovalChain::query()->with(['department.entity', 'approverUser.roles'])->withCount('approvalRecords')->orderBy('department_id')->orderBy('level')->get()->map(fn (ApprovalChain $chain): array => [
+                'id' => $chain->id,
+                'department_id' => $chain->department_id,
+                'level' => $chain->level,
+                'type' => $chain->type,
+                'approver_user_id' => $chain->approver_user_id,
+                'approver_role' => $chain->approver_role,
+                'approver_user' => $chain->approverUser,
+                'department' => $chain->department,
+                'has_records' => $chain->approval_records_count > 0,
+            ]),
             'departments' => Department::query()->with('entity')->orderBy('name')->get(['id', 'name', 'entity_id']),
             'users' => User::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'email']),
         ]))->name('approval-chains.index');
@@ -248,13 +258,31 @@ Route::prefix('admin')
             'roles' => Role::query()->orderBy('name')->pluck('name')->values(),
         ]))->name('users.index');
         Route::get('smtp', fn () => Inertia::render('Admin/Configurations/Smtp', [
-            'smtpSettings' => SmtpSetting::query()->latest()->get(),
+            'smtpSettings' => SmtpSetting::query()->latest()->get()->map(fn (SmtpSetting $setting): array => [
+                'id' => $setting->id,
+                'host' => $setting->host,
+                'port' => $setting->port,
+                'username' => $setting->username,
+                'encryption' => $setting->encryption,
+                'from_address' => $setting->from_address,
+                'from_name' => $setting->from_name,
+                'is_active' => $setting->is_active,
+                'has_password' => filled($setting->password),
+            ]),
         ]));
         Route::get('graph-api', fn () => Inertia::render('Admin/Configurations/GraphApi', [
             'graphApiConfigs' => GraphApiConfig::query()->latest()->get(),
         ]));
         Route::get('docuseal', fn () => Inertia::render('Admin/Configurations/Docuseal', [
-            'docusealConfigs' => DocusealConfig::query()->latest()->get(),
+            'docusealConfigs' => DocusealConfig::query()->latest()->get()->map(fn (DocusealConfig $config): array => [
+                'id' => $config->id,
+                'api_url' => $config->api_url,
+                'offering_template_id' => $config->offering_template_id,
+                'pkwt_template_id' => $config->pkwt_template_id,
+                'is_active' => $config->is_active,
+                'has_api_key' => filled($config->api_key),
+                'has_webhook_secret' => filled($config->webhook_secret),
+            ]),
         ]));
         Route::get('cms', fn () => Inertia::render('Admin/Configurations/Cms', [
             'companyProfile' => CompanyProfile::query()->first(),

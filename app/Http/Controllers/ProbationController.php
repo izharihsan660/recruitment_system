@@ -17,7 +17,7 @@ class ProbationController extends Controller
 
     public function index(): Response
     {
-        return Inertia::render('Probation/Index', ['probations' => ProbationRecord::query()->with(['employee.department'])->latest()->paginate(10)]);
+        return Inertia::render('Probation/Index', ['employees' => Employee::query()->with(['department', 'probationRecord'])->where('status', 'active')->latest()->paginate(10)]);
     }
 
     public function show(Employee $employee): Response

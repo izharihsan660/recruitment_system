@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use Database\Factories\ApprovalChainFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ApprovalChain extends Model
 {
-    /** @use HasFactory<\Database\Factories\ApprovalChainFactory> */
+    /** @use HasFactory<ApprovalChainFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -34,5 +36,10 @@ class ApprovalChain extends Model
     public function approverUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approver_user_id');
+    }
+
+    public function approvalRecords(): HasMany
+    {
+        return $this->hasMany(ApprovalRecord::class);
     }
 }
