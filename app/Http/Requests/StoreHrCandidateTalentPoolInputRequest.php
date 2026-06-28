@@ -10,7 +10,7 @@ class StoreHrCandidateTalentPoolInputRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasAnyRole([Roles::HrRecruiter, Roles::HrManager]) === true;
+        return $this->user()?->hasAnyRole([Roles::Admin, Roles::HrRecruiter, Roles::HrManager]) === true;
     }
 
     public function rules(): array

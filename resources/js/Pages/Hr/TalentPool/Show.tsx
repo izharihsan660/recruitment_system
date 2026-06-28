@@ -32,7 +32,7 @@ export default function TalentPoolShow({ talentPool, jobPostings }: { talentPool
                 </Card>
                 <Card className="p-6">
                     <div className="space-y-4">
-                        <div><FormLabel>Status</FormLabel><TextInput value={form.data.status} onChange={(event) => form.setData('status', event.target.value)} /></div>
+                        <div><FormLabel>Status</FormLabel><SelectInput value={form.data.status} onChange={(event) => form.setData('status', event.target.value)}><option value="active">Active</option><option value="passive">Passive</option><option value="hot_prospect">Hot Prospect</option><option value="on_hold">On Hold</option><option value="do_not_contact">Do Not Contact</option><option value="hired_elsewhere">Hired Elsewhere</option><option value="archived">Archived</option></SelectInput></div>
                         <div><FormLabel>Tags</FormLabel><TextInput value={form.data.tags} onChange={(event) => form.setData('tags', event.target.value)} /></div>
                         <TextArea rows={3} value={form.data.notes} onChange={(event) => form.setData('notes', event.target.value)} />
                         <Button onClick={() => router.put(`/hr/talent-pool/${talentPool.id}`, { status: form.data.status, tags: form.data.tags.split(',').map((tag) => tag.trim()).filter(Boolean), notes: form.data.notes })}>Simpan Status/Tags/Catatan</Button>
