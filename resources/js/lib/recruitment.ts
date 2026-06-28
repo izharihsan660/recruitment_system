@@ -103,6 +103,7 @@ export interface Candidate {
 }
 
 export interface EducationItem {
+    level?: string;
     degree: string;
     major: string;
     institution: string;
@@ -112,6 +113,7 @@ export interface EducationItem {
 export interface ExperienceItem {
     company: string;
     position: string;
+    years?: number;
     start_year: number | string;
     end_year?: number | string | null;
     description?: string | null;

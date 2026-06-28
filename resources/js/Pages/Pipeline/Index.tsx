@@ -209,18 +209,60 @@ export default function PipelineIndex({
                             Tutup
                         </Button>
                     </div>
-                    <p className="text-xl font-bold">{selected.candidate?.name}</p>
-                    <p className="text-sm text-slate-500">{selected.candidate?.email}</p>
-                    <a className="mt-3 block text-sm text-blue-600" href={selected.candidate?.cv_path ?? '#'}>
-                        Download CV
+                    <div className="mb-4 flex items-center gap-3">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700">
+                            {selected.candidate?.name?.split(' ').slice(0, 2).map((name) => name[0]).join('').toUpperCase()}
+                        </div>
+                        <div>
+                            <p className="font-semibold text-slate-900">{selected.candidate?.name}</p>
+                            <p className="text-xs text-slate-500">{selected.candidate?.email}</p>
+                        </div>
+                    </div>
+                    <div className="mb-4 grid grid-cols-2 gap-2">
+                        {selected.candidate?.phone && (
+                            <div className="rounded-lg bg-slate-50 p-2.5">
+                                <p className="mb-0.5 text-xs text-slate-400">No HP</p>
+                                <p className="text-xs font-medium text-slate-700">{selected.candidate.phone}</p>
+                            </div>
+                        )}
+
+                        {selected.candidate?.gender && (
+                            <div className="rounded-lg bg-slate-50 p-2.5">
+                                <p className="mb-0.5 text-xs text-slate-400">Jenis Kelamin</p>
+                                <p className="text-xs font-medium text-slate-700">
+                                    {selected.candidate.gender === 'male' ? 'Laki-laki' : 'Perempuan'}
+                                </p>
+                            </div>
+                        )}
+
+                        {selected.candidate?.education && selected.candidate.education.length > 0 && (
+                            <div className="col-span-2 rounded-lg bg-slate-50 p-2.5">
+                                <p className="mb-0.5 text-xs text-slate-400">Pendidikan</p>
+                                <p className="text-xs font-medium text-slate-700">
+                                    {selected.candidate.education[0].level ?? selected.candidate.education[0].degree} – {selected.candidate.education[0].major} · {selected.candidate.education[0].institution}
+                                </p>
+                            </div>
+                        )}
+
+                        {selected.candidate?.experience && selected.candidate.experience.length > 0 && (
+                            <div className="col-span-2 rounded-lg bg-slate-50 p-2.5">
+                                <p className="mb-0.5 text-xs text-slate-400">Pengalaman</p>
+                                <p className="text-xs font-medium text-slate-700">
+                                    {selected.candidate.experience[0].position} · {selected.candidate.experience[0].company} · {selected.candidate.experience[0].years ?? '-'} thn
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                    <a className="mb-4 flex items-center gap-1 text-xs text-blue-600" href={selected.candidate?.cv_path ?? '#'}>
+                        ↓ Download CV
                     </a>
                     <div className="mt-6 space-y-3">
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Aksi Stage Saat Ini</p>
                         <PipelineStageActions application={selected} />
-                        <PipelineSummary application={selected} />
                         {canMoveStage(selected) && <Button onClick={() => fallbackMove(selected)}>Pindah Stage</Button>}
                         {canRejectOrWithdraw(selected) && <RejectBox id={selected.id} />}
                     </div>
-                    <h3 className="mt-6 font-semibold">Timeline Stage</h3>
+                    <p className="mb-2 mt-4 border-t border-slate-100 pt-4 text-xs font-semibold uppercase tracking-wide text-slate-400">Timeline Stage</p>
                     <div className="mt-2 space-y-2">
                         {(selected.pipeline_logs?.length ?? 0) > 0 ? (
                             selected.pipeline_logs?.map((log) => (
@@ -549,7 +591,7 @@ function RejectBox({ id }: { id: number }): JSX.Element {
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
             />
-            <div className="flex gap-2">
+            <div className="mt-2 grid grid-cols-2 gap-2">
                 <Button variant="danger" onClick={() => setPendingAction('reject')}>
                     Reject
                 </Button>
@@ -595,7 +637,6 @@ function PipelineStageActions({ application }: { application: ApplicationItem })
 
     return (
         <div className="rounded-md border border-blue-100 bg-blue-50 p-3">
-            <p className="mb-2 text-sm font-semibold text-blue-900">Aksi Stage Saat Ini</p>
             <div className="flex flex-wrap gap-2">
                 {action.labels.map((label) => (
                     <a key={label} href={action.href} className="inline-flex rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700">
@@ -605,52 +646,6 @@ function PipelineStageActions({ application }: { application: ApplicationItem })
             </div>
         </div>
     );
-}
-
-function PipelineSummary({ application }: { application: ApplicationItem }): JSX.Element | null {
-    const summaries = [
-        application.screening?.decision ? `Screening: ${decisionLabel(application.screening.decision)}` : null,
-        application.psycho_test?.decision ? `Psikotes: ${decisionLabel(application.psycho_test.decision)}` : null,
-        application.hr_interview?.recommendation ? `Interview HR: ${decisionLabel(application.hr_interview.recommendation)}` : null,
-        application.user_interview?.recommendation ? `Interview User: ${decisionLabel(application.user_interview.recommendation)}` : null,
-        application.background_check?.decision ? `Background Check: ${decisionLabel(application.background_check.decision)}` : null,
-        application.offering_letter?.status ? `Offering: ${decisionLabel(application.offering_letter.status)}${application.offering_letter.signed_at ? ` - Signed ${application.offering_letter.signed_at}` : ''}` : null,
-        application.pkwt_contract?.status ? `PKWT: ${decisionLabel(application.pkwt_contract.status)}${application.pkwt_contract.signed_at ? ` - Signed ${application.pkwt_contract.signed_at}` : ''}` : null,
-    ].filter(Boolean);
-
-    if (summaries.length === 0) {
-        return null;
-    }
-
-    return (
-        <div className="space-y-2 rounded-md border border-slate-200 p-3 text-sm text-slate-700">
-            {summaries.map((summary) => <p key={summary}>{summary}</p>)}
-        </div>
-    );
-}
-
-function decisionLabel(value: string): string {
-    const labels: Record<string, string> = {
-        passed: 'Lolos',
-        failed: 'Tidak Lolos',
-        pending_info: 'Pending Info',
-        recommended: 'Direkomendasikan',
-        considered: 'Dipertimbangkan',
-        not_recommended: 'Tidak Direkomendasikan',
-        accepted: 'Diterima',
-        rejected: 'Ditolak',
-        clear: 'Clear',
-        issue: 'Issue',
-        draft: 'Draft',
-        sent: 'Terkirim',
-        viewed: 'Dilihat',
-        negotiation: 'Negosiasi',
-        expired: 'Expired',
-        signed: 'Signed',
-        partially_signed: 'Sebagian Signed',
-    };
-
-    return labels[value] ?? humanize(value);
 }
 
 function fallbackMove(application: ApplicationItem): void {
