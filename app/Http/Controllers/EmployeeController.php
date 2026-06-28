@@ -6,7 +6,9 @@ use App\Http\Requests\ActivateEmployeeRequest;
 use App\Http\Requests\UpdateEmployeeRequest;
 use App\Models\Application;
 use App\Models\Employee;
+use App\Models\User;
 use App\Services\ActiveEmployeeService;
+use App\Services\PreboardingService;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -17,12 +19,44 @@ class EmployeeController extends Controller
 
     public function index(): Response
     {
-        return Inertia::render('Employees/Index', ['employees' => Employee::query()->with(['department', 'entity'])->latest()->paginate(10)]);
+        $employees = Employee::query()
+            ->with(['department', 'entity', 'preboardingChecklist.items', 'probationRecord'])
+            ->where('status', 'active')
+            ->latest()
+            ->paginate(10);
+
+        $employees->getCollection()->transform(function (Employee $employee): Employee {
+            $items = $employee->preboardingChecklist?->items ?? collect();
+            $employee->preboarding_progress = [
+                'done' => $items->where('status', 'done')->count(),
+                'total' => $items->count(),
+            ];
+
+            return $employee;
+        });
+
+        return Inertia::render('Employees/Index', ['employees' => $employees]);
     }
 
     public function show(Employee $employee): Response
     {
-        return Inertia::render('Employees/Show', ['employee' => $employee->load(['candidate', 'department', 'entity', 'preboardingChecklist', 'probationRecord'])]);
+        $employee->load([
+            'department',
+            'entity',
+            'preboardingChecklist.items.pic',
+            'probationRecord.evaluations',
+            'application.candidate',
+        ]);
+
+        $checklist = $employee->preboardingChecklist
+            ?? app(PreboardingService::class)->createFromTemplate($employee)->load('items.pic');
+
+        return Inertia::render('Employees/Show', [
+            'employee' => $employee,
+            'checklist' => $checklist,
+            'users' => User::query()->where('is_active', true)->get(['id', 'name']),
+            'probation' => $employee->probationRecord?->load('evaluations'),
+        ]);
     }
 
     public function activate(Application $application): Response

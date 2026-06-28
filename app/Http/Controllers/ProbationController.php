@@ -34,7 +34,7 @@ class ProbationController extends Controller
 
     public function outcome(SubmitProbationOutcomeRequest $request, ProbationRecord $probation): RedirectResponse
     {
-        $this->probationService->submitOutcome($probation, $request->validated('outcome'), $request->validated('extended_until'));
+        $this->probationService->submitOutcome($probation, $request->validated('outcome'), $request->user(), $request->validated('extended_until'));
 
         return back()->with('success', 'Outcome probation berhasil disimpan.');
     }
