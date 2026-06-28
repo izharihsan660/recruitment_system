@@ -132,12 +132,12 @@ export interface ApplicationItem {
     job_posting?: JobPosting;
     jobPosting?: JobPosting;
     pipeline_logs?: PipelineLog[];
-    screening?: { decision?: string | null } | null;
-    psycho_test?: { id?: number; decision?: string | null; scheduled_at?: string | null } | null;
-    hr_interview?: { id?: number; recommendation?: string | null; status?: string | null } | null;
-    user_interview?: { id?: number; recommendation?: string | null; status?: string | null } | null;
-    background_check?: { id?: number; decision?: string | null } | null;
-    offering_letter?: { id?: number; status?: string | null; signed_at?: string | null } | null;
+    screening?: { education_match?: boolean | null; experience_match?: boolean | null; document_complete?: boolean | null; decision?: string | null; notes?: string | null } | null;
+    psycho_test?: { id?: number; test_type?: string | null; decision?: string | null; notes?: string | null; scheduled_at?: string | null } | null;
+    hr_interview?: { id?: number; score_communication?: number | null; score_personality?: number | null; score_motivation?: number | null; score_attitude?: number | null; score_culture_fit?: number | null; recommendation?: string | null; salary_expectation?: number | null; strengths?: string | null; weaknesses?: string | null; status?: string | null } | null;
+    user_interview?: { id?: number; score_technical?: number | null; score_experience?: number | null; score_problem_solving?: number | null; score_team_fit?: number | null; recommendation?: string | null; status?: string | null } | null;
+    background_check?: { id?: number; ktp_verified?: boolean | null; ijazah_verified?: boolean | null; certificate_verified?: boolean | null; reference_verified?: boolean | null; decision?: string | null } | null;
+    offering_letter?: { id?: number; status?: string | null; salary_gross?: number | null; salary_nett?: number | null; signed_at?: string | null } | null;
     pkwt_contract?: { id?: number; status?: string | null; signed_at?: string | null } | null;
 }
 

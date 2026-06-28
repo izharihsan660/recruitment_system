@@ -28,7 +28,7 @@ import {
 } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { Head, router } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const stages = [
     'applied',
@@ -67,8 +67,11 @@ export default function PipelineIndex({
 }): JSX.Element {
     const [selected, setSelected] = useState<ApplicationItem | null>(null);
     const [activeApplicationId, setActiveApplicationId] = useState<number | null>(null);
+    const [expandedLog, setExpandedLog] = useState<number | null>(null);
     const [pendingMove, setPendingMove] = useState<PendingMove | null>(null);
     const [invalidDropMessage, setInvalidDropMessage] = useState<string | null>(null);
+
+    useEffect(() => setExpandedLog(null), [selected?.id]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -221,13 +224,27 @@ export default function PipelineIndex({
                     <div className="mt-2 space-y-2">
                         {(selected.pipeline_logs?.length ?? 0) > 0 ? (
                             selected.pipeline_logs?.map((log) => (
-                                <div key={log.id} className="rounded-md bg-slate-50 p-3 text-sm">
-                                    <p className="font-medium">
-                                        {humanize(log.from_stage)} → {humanize(log.to_stage)}
-                                    </p>
-                                    <p className="text-xs text-slate-500">
-                                        {log.created_at ? new Date(log.created_at).toLocaleDateString('id-ID') : ''}
-                                    </p>
+                                <div
+                                    key={log.id}
+                                    className="cursor-pointer overflow-hidden rounded-md border border-slate-200"
+                                    onClick={() => setExpandedLog(expandedLog === log.id ? null : log.id)}
+                                >
+                                    <div className="flex items-center justify-between bg-slate-50 p-3">
+                                        <div>
+                                            <p className="text-sm font-medium">
+                                                {humanize(log.from_stage)} → {humanize(log.to_stage)}
+                                            </p>
+                                            <p className="text-xs text-slate-500">
+                                                {log.created_at ? new Date(log.created_at).toLocaleDateString('id-ID') : ''}
+                                            </p>
+                                        </div>
+                                        <span className="text-xs text-slate-400">
+                                            {expandedLog === log.id ? '▼' : '▶'}
+                                        </span>
+                                    </div>
+                                    {expandedLog === log.id && (
+                                        <StageDetail stage={log.to_stage ?? ''} application={selected} />
+                                    )}
                                 </div>
                             ))
                         ) : (
@@ -237,6 +254,151 @@ export default function PipelineIndex({
                 </div>
             )}
         </AuthenticatedLayout>
+    );
+}
+
+function StageDetail({
+    stage,
+    application,
+}: {
+    stage: string;
+    application: ApplicationItem;
+}): JSX.Element {
+    const formatRupiah = (value?: number | null): string =>
+        value
+            ? new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0,
+            }).format(value)
+            : '-';
+
+    const yaTidak = (value?: boolean | null): string => (value ? 'Ya' : 'Tidak');
+
+    const Row = ({ label, value }: { label: string; value: string }): JSX.Element => (
+        <div>
+            <p className="text-xs text-slate-500">{label}</p>
+            <p className="text-sm font-medium text-slate-700">{value}</p>
+        </div>
+    );
+
+    const content = (): JSX.Element => {
+        switch (stage) {
+            case 'screening': {
+                const screening = application.screening;
+
+                if (!screening) {
+                    return <p className="text-xs text-slate-400">Belum ada data.</p>;
+                }
+
+                return (
+                    <div className="grid grid-cols-2 gap-2">
+                        <Row label="Pendidikan" value={yaTidak(screening.education_match)} />
+                        <Row label="Pengalaman" value={yaTidak(screening.experience_match)} />
+                        <Row label="Dokumen" value={yaTidak(screening.document_complete)} />
+                        <Row label="Keputusan" value={screening.decision ?? '-'} />
+                        {screening.notes && <div className="col-span-2"><Row label="Catatan" value={screening.notes} /></div>}
+                    </div>
+                );
+            }
+            case 'test_psikotes': {
+                const test = application.psycho_test;
+
+                if (!test) {
+                    return <p className="text-xs text-slate-400">Belum ada data.</p>;
+                }
+
+                return (
+                    <div className="grid grid-cols-2 gap-2">
+                        <Row label="Jenis Test" value={test.test_type ?? '-'} />
+                        <Row label="Keputusan" value={test.decision ?? '-'} />
+                        {test.notes && <div className="col-span-2"><Row label="Catatan" value={test.notes} /></div>}
+                    </div>
+                );
+            }
+            case 'interview_hr': {
+                const interview = application.hr_interview;
+
+                if (!interview) {
+                    return <p className="text-xs text-slate-400">Belum ada data.</p>;
+                }
+
+                return (
+                    <div className="grid grid-cols-2 gap-2">
+                        <Row label="Komunikasi" value={interview.score_communication ? `${interview.score_communication}/5` : '-'} />
+                        <Row label="Kepribadian" value={interview.score_personality ? `${interview.score_personality}/5` : '-'} />
+                        <Row label="Motivasi" value={interview.score_motivation ? `${interview.score_motivation}/5` : '-'} />
+                        <Row label="Attitude" value={interview.score_attitude ? `${interview.score_attitude}/5` : '-'} />
+                        <Row label="Culture Fit" value={interview.score_culture_fit ? `${interview.score_culture_fit}/5` : '-'} />
+                        <Row label="Rekomendasi" value={interview.recommendation ?? '-'} />
+                        {interview.salary_expectation && (
+                            <div className="col-span-2">
+                                <Row label="Ekspektasi Gaji" value={formatRupiah(interview.salary_expectation)} />
+                            </div>
+                        )}
+                        {interview.strengths && <div className="col-span-2"><Row label="Kekuatan" value={interview.strengths} /></div>}
+                        {interview.weaknesses && <div className="col-span-2"><Row label="Kelemahan" value={interview.weaknesses} /></div>}
+                    </div>
+                );
+            }
+            case 'interview_user': {
+                const interview = application.user_interview;
+
+                if (!interview) {
+                    return <p className="text-xs text-slate-400">Belum ada data.</p>;
+                }
+
+                return (
+                    <div className="grid grid-cols-2 gap-2">
+                        <Row label="Kemampuan Teknis" value={interview.score_technical ? `${interview.score_technical}/5` : '-'} />
+                        <Row label="Pengalaman Kerja" value={interview.score_experience ? `${interview.score_experience}/5` : '-'} />
+                        <Row label="Problem Solving" value={interview.score_problem_solving ? `${interview.score_problem_solving}/5` : '-'} />
+                        <Row label="Kesesuaian Tim" value={interview.score_team_fit ? `${interview.score_team_fit}/5` : '-'} />
+                        <Row label="Rekomendasi" value={interview.recommendation ?? '-'} />
+                    </div>
+                );
+            }
+            case 'background_check': {
+                const backgroundCheck = application.background_check;
+
+                if (!backgroundCheck) {
+                    return <p className="text-xs text-slate-400">Belum ada data.</p>;
+                }
+
+                return (
+                    <div className="grid grid-cols-2 gap-2">
+                        <Row label="KTP" value={yaTidak(backgroundCheck.ktp_verified)} />
+                        <Row label="Ijazah" value={yaTidak(backgroundCheck.ijazah_verified)} />
+                        <Row label="Sertifikat" value={yaTidak(backgroundCheck.certificate_verified)} />
+                        <Row label="Referensi" value={yaTidak(backgroundCheck.reference_verified)} />
+                        <Row label="Keputusan" value={backgroundCheck.decision ?? '-'} />
+                    </div>
+                );
+            }
+            case 'offering': {
+                const offering = application.offering_letter;
+
+                if (!offering) {
+                    return <p className="text-xs text-slate-400">Belum ada data.</p>;
+                }
+
+                return (
+                    <div className="grid grid-cols-2 gap-2">
+                        <Row label="Status" value={offering.status ?? '-'} />
+                        <Row label="Gaji Gross" value={formatRupiah(offering.salary_gross)} />
+                        <Row label="Gaji Nett" value={formatRupiah(offering.salary_nett)} />
+                    </div>
+                );
+            }
+            default:
+                return <p className="text-xs text-slate-400">Tidak ada detail untuk stage ini.</p>;
+        }
+    };
+
+    return (
+        <div className="border-t border-slate-200 bg-white p-3">
+            {content()}
+        </div>
     );
 }
 
