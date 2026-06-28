@@ -66,7 +66,7 @@ class DocusealConfigController extends Controller
         Http::withHeaders(['X-Auth-Token' => $docusealConfig->api_key])
             ->acceptJson()
             ->timeout(10)
-            ->get(rtrim($docusealConfig->api_url, '/').'/submissions', ['limit' => 1])
+            ->get(rtrim($docusealConfig->api_url, '/').'/api/submissions', ['limit' => 1])
             ->throw();
 
         return response()->json(['message' => 'Koneksi DocuSeal berhasil.']);

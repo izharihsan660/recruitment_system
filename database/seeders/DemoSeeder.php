@@ -8,11 +8,15 @@ use App\Models\ApprovalRecord;
 use App\Models\BackgroundCheck;
 use App\Models\Candidate;
 use App\Models\Department;
+use App\Models\Employee;
 use App\Models\Entity;
 use App\Models\HrInterview;
 use App\Models\JobPosting;
 use App\Models\OfferingLetter;
 use App\Models\PipelineLog;
+use App\Models\PreboardingChecklist;
+use App\Models\PreboardingItem;
+use App\Models\ProbationRecord;
 use App\Models\PsychoTest;
 use App\Models\RecruitmentRequest;
 use App\Models\Screening;
@@ -47,6 +51,8 @@ class DemoSeeder extends Seeder
         $this->applicationWithProgress($postings['Driver'], $candidates['Ahmad Fauzi'], 'background_check', ['applied', 'screening', 'interview_hr', 'interview_user', 'background_check'], $users, $now, ['screening', 'hr_interview', 'user_interview']);
         $this->applicationWithProgress($postings['Finance Staff'], $candidates['Rina Marlina'], 'offering', ['applied', 'screening', 'interview_hr', 'interview_user', 'background_check', 'offering'], $users, $now, ['screening', 'hr_interview', 'user_interview', 'background_check', 'offering']);
         $this->applicationWithProgress($postings['Driver'], $candidates['Doni Prasetyo'], 'applied', ['applied'], $users, $now);
+
+        $this->hiredEmployeeDemoData($now);
 
         $this->talentPoolApplications($postings, $users, $now);
     }
@@ -438,6 +444,70 @@ class DemoSeeder extends Seeder
 
             $previous = $stage;
         }
+    }
+
+    private function hiredEmployeeDemoData(Carbon $now): void
+    {
+        Application::query()->where('id', 4)->update(['status' => 'hired']);
+
+        $employee = Employee::query()->firstOrCreate(
+            ['application_id' => 4],
+            [
+                'candidate_id' => 4,
+                'entity_id' => 1,
+                'department_id' => 3,
+                'employee_id' => 'EMP-001',
+                'full_name' => 'Rina Marlina',
+                'email' => 'kandidat4@example.com',
+                'position_name' => 'Finance Staff',
+                'contract_type' => 'contract',
+                'start_date' => $now->copy()->subDays(30)->toDateString(),
+                'end_date' => $now->copy()->addMonths(11)->toDateString(),
+                'status' => 'active',
+                'activated_by' => 2,
+                'activated_at' => $now->copy()->subDays(30),
+            ],
+        );
+
+        $checklist = PreboardingChecklist::query()->firstOrCreate(
+            ['employee_id' => $employee->id],
+            [
+                'status' => 'in_progress',
+                'first_day' => $now->copy()->subDays(30)->toDateString(),
+            ],
+        );
+
+        $items = [
+            ['title' => 'Welcome Email & intro perusahaan', 'description' => 'Kirim welcome email dan intro perusahaan', 'status' => 'done', 'completed_at' => $now->copy()->subDays(28)],
+            ['title' => 'Document Final Collection', 'description' => 'Kumpulkan dan validasi dokumen final karyawan', 'status' => 'in_progress', 'completed_at' => null],
+            ['title' => 'First Day Info', 'description' => 'Kirim informasi hari pertama kerja', 'status' => 'done', 'completed_at' => $now->copy()->subDays(27)],
+            ['title' => 'IT & Equipment', 'description' => 'Siapkan akun, perangkat, dan kebutuhan kerja', 'status' => 'pending', 'completed_at' => null],
+            ['title' => 'Buddy Assign & Welcome Pack', 'description' => 'Tentukan buddy dan siapkan welcome pack', 'status' => 'pending', 'completed_at' => null],
+            ['title' => 'Orientation & Training', 'description' => 'Jadwalkan orientasi dan training awal', 'status' => 'pending', 'completed_at' => null],
+        ];
+
+        foreach ($items as $item) {
+            PreboardingItem::query()->firstOrCreate(
+                ['checklist_id' => $checklist->id, 'title' => $item['title']],
+                [
+                    'description' => $item['description'],
+                    'status' => $item['status'],
+                    'assigned_to' => 2,
+                    'completed_at' => $item['completed_at'],
+                ],
+            );
+        }
+
+        ProbationRecord::query()->firstOrCreate(
+            ['employee_id' => $employee->id],
+            [
+                'start_date' => $now->copy()->subDays(30)->toDateString(),
+                'day30_due' => $now->toDateString(),
+                'day60_due' => $now->copy()->addDays(30)->toDateString(),
+                'day90_due' => $now->copy()->addDays(60)->toDateString(),
+                'status' => 'day30_review',
+            ],
+        );
     }
 
     /**
