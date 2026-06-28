@@ -30,7 +30,7 @@ export default function PsychoTest({ application, psychoTest, notRequired }: { a
                     <form onSubmit={(event) => { event.preventDefault(); scheduleForm.post(`/hr/psycho-test/${application.id}/schedule`); }} className="space-y-4">
                         <div><FormLabel required>Jenis Test</FormLabel><TextInput value={scheduleForm.data.test_type} onChange={(event) => scheduleForm.setData('test_type', event.target.value)} /><FieldError message={scheduleForm.errors.test_type} /></div>
                         <div><FormLabel required>Tanggal & Waktu</FormLabel><TextInput type="datetime-local" value={scheduleForm.data.scheduled_at} onChange={(event) => scheduleForm.setData('scheduled_at', event.target.value)} /><FieldError message={scheduleForm.errors.scheduled_at} /></div>
-                        <div><FormLabel>Catatan</FormLabel><TextArea rows={3} value={scheduleForm.data.notes} onChange={(event) => scheduleForm.setData('notes', event.target.value)} /></div>
+                        <div><FormLabel>Catatan</FormLabel><TextArea rows={3} value={scheduleForm.data.notes} onChange={(event) => scheduleForm.setData('notes', event.target.value)} /><FieldError message={scheduleForm.errors.notes} /></div>
                         <Button type="submit" disabled={scheduleForm.processing}>{scheduleForm.processing ? 'Menyimpan...' : 'Simpan Jadwal'}</Button>
                     </form>
                 </Card>
@@ -38,7 +38,7 @@ export default function PsychoTest({ application, psychoTest, notRequired }: { a
                     <h2 className="mb-4 font-semibold">Hasil Test</h2>
                     <form onSubmit={(event) => { event.preventDefault(); resultForm.post(`/hr/psycho-test/${application.id}/result`); }} className="space-y-4">
                         <div><FormLabel required>Keputusan</FormLabel><div className="flex gap-3 text-sm"><label><input type="radio" checked={resultForm.data.decision === 'passed'} onChange={() => resultForm.setData('decision', 'passed')} /> Lulus</label><label><input type="radio" checked={resultForm.data.decision === 'failed'} onChange={() => resultForm.setData('decision', 'failed')} /> Tidak Lulus</label></div><FieldError message={resultForm.errors.decision} /></div>
-                        <div><FormLabel>Catatan</FormLabel><TextArea rows={3} value={resultForm.data.notes} onChange={(event) => resultForm.setData('notes', event.target.value)} /></div>
+                        <div><FormLabel>Catatan</FormLabel><TextArea rows={3} value={resultForm.data.notes} onChange={(event) => resultForm.setData('notes', event.target.value)} /><FieldError message={resultForm.errors.notes} /></div>
                         {resultForm.data.decision === 'failed' && <div><FormLabel required>Alasan Penolakan</FormLabel><TextArea rows={3} value={resultForm.data.rejection_reason} onChange={(event) => resultForm.setData('rejection_reason', event.target.value)} /><FieldError message={resultForm.errors.rejection_reason} /></div>}
                         <Button type="submit" disabled={!psychoTest?.id || resultForm.processing}>{resultForm.processing ? 'Menyimpan...' : 'Simpan Hasil'}</Button>
                     </form>

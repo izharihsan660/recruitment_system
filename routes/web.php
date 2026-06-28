@@ -190,23 +190,25 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     Route::get('/pipeline', function () {
         return Inertia::render('Pipeline/Index', [
-            'applications' => ApplicationResource::collection(
-                CandidateApplication::query()
-                    ->with([
-                        'candidate',
-                        'jobPosting',
-                        'screening',
-                        'psychoTest',
-                        'hrInterview',
-                        'userInterview',
-                        'backgroundCheck',
-                        'offeringLetter',
-                        'pkwtContract',
-                    ])
-                    ->whereNotIn('status', ['rejected', 'withdrawn'])
-                    ->latest()
-                    ->get()
-            )->resolve(),
+            'applications' => CandidateApplication::query()
+                ->with([
+                    'candidate',
+                    'jobPosting',
+                    'screening',
+                    'psychoTest',
+                    'hrInterview',
+                    'userInterview',
+                    'backgroundCheck',
+                    'offeringLetter',
+                    'pkwtContract',
+                    'pipelineLogs',
+                ])
+                ->whereNotIn('status', ['rejected', 'withdrawn'])
+                ->latest()
+                ->get()
+                ->map(fn ($application) => (new ApplicationResource($application))->resolve())
+                ->values()
+                ->toArray(),
             'jobPostings' => JobPosting::query()->where('status', 'open')->orderBy('position_name')->get(['id', 'position_name']),
             'departments' => Department::query()->orderBy('name')->get(['id', 'name']),
             'sources' => CandidateSource::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),

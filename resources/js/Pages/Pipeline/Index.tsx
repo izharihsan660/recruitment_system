@@ -219,11 +219,20 @@ export default function PipelineIndex({
                     </div>
                     <h3 className="mt-6 font-semibold">Timeline Stage</h3>
                     <div className="mt-2 space-y-2">
-                        {selected.pipeline_logs?.map((log) => (
-                            <div key={log.id} className="rounded-md bg-slate-50 p-3 text-sm">
-                                {humanize(log.from_stage)} → {humanize(log.to_stage)}
-                            </div>
-                        ))}
+                        {(selected.pipeline_logs?.length ?? 0) > 0 ? (
+                            selected.pipeline_logs?.map((log) => (
+                                <div key={log.id} className="rounded-md bg-slate-50 p-3 text-sm">
+                                    <p className="font-medium">
+                                        {humanize(log.from_stage)} → {humanize(log.to_stage)}
+                                    </p>
+                                    <p className="text-xs text-slate-500">
+                                        {log.created_at ? new Date(log.created_at).toLocaleDateString('id-ID') : ''}
+                                    </p>
+                                </div>
+                            ))
+                        ) : (
+                            <p className="text-sm text-slate-500">Belum ada perpindahan stage.</p>
+                        )}
                     </div>
                 </div>
             )}
