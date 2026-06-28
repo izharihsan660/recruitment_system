@@ -7,6 +7,7 @@ use App\Models\PreboardingChecklist;
 use App\Models\PreboardingItem;
 use App\Models\User;
 use App\Notifications\SubjectTextNotification;
+use App\Support\Roles;
 use Illuminate\Validation\ValidationException;
 
 class PreboardingService
@@ -57,7 +58,7 @@ class PreboardingService
 
     public function completeItem(PreboardingItem $item, User $actor): void
     {
-        if ((int) $item->assigned_to !== (int) $actor->id) {
+        if (! $actor->hasRole(Roles::Admin) && (int) $item->assigned_to !== (int) $actor->id) {
             throw ValidationException::withMessages(['actor' => 'Hanya PIC yang di-assign dapat menyelesaikan item.']);
         }
 

@@ -6,6 +6,7 @@ use App\Models\Application;
 use App\Models\User;
 use App\Models\UserInterview;
 use App\Notifications\UserInterviewScheduledNotification;
+use App\Support\Roles;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -40,7 +41,7 @@ class UserInterviewService
 
     public function submitScorecard(UserInterview $interview, array $data, User $actor): void
     {
-        if ((int) $interview->interviewer_id !== (int) $actor->id) {
+        if (! $actor->hasRole(Roles::Admin) && (int) $interview->interviewer_id !== (int) $actor->id) {
             abort(403, 'Hanya interviewer yang ditugaskan dapat mengisi scorecard.');
         }
 

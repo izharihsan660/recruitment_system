@@ -195,11 +195,15 @@ class RecruitmentRequestService
     {
         $chain = $record->approvalChain;
 
+        if ($actor->hasRole(Roles::Admin)) {
+            return;
+        }
+
         if ($chain->type === 'user' && (int) $chain->approver_user_id === (int) $actor->id) {
             return;
         }
 
-        if ($chain->type === 'role' && $actor->hasAnyRole([Roles::HrManager, Roles::HrRecruiter])) {
+        if ($chain->type === 'role' && $actor->hasAnyRole([Roles::Admin, Roles::HrManager, Roles::HrRecruiter])) {
             return;
         }
 

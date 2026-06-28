@@ -29,7 +29,7 @@ class ProbationService
     public function submitEvaluation(ProbationRecord $probation, array $data, User $actor): ProbationEvaluation
     {
         $probation->loadMissing('employee');
-        if (! $actor->hasRole(Roles::HiringManager) || (int) $actor->department_id !== (int) $probation->employee->department_id) {
+        if (! $actor->hasRole(Roles::Admin) && (! $actor->hasRole(Roles::HiringManager) || (int) $actor->department_id !== (int) $probation->employee->department_id)) {
             throw ValidationException::withMessages(['actor' => 'Hanya hiring manager departemen terkait yang dapat evaluasi.']);
         }
 
@@ -57,7 +57,7 @@ class ProbationService
 
     public function submitOutcome(ProbationRecord $probation, string $outcome, User $actor, ?string $extendedUntil = null): void
     {
-        if (! $actor->hasAnyRole([Roles::HrManager, Roles::HrRecruiter])) {
+        if (! $actor->hasAnyRole([Roles::Admin, Roles::HrManager, Roles::HrRecruiter])) {
             throw ValidationException::withMessages(['actor' => 'Hanya HR yang dapat submit outcome probation.']);
         }
 

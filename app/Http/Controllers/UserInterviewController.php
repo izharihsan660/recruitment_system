@@ -27,14 +27,19 @@ class UserInterviewController extends Controller
             'application' => (new ApplicationResource($application))->resolve(),
             'interview' => $application->userInterview ? (new UserInterviewResource($application->userInterview))->resolve() : null,
             'interviewers' => UserResource::collection(User::role(Roles::HiringManager)->where('is_active', true)->orderBy('name')->get())->resolve(),
-            'canSchedule' => request()->user()->hasAnyRole([Roles::HrRecruiter, Roles::HrManager]),
-            'canScorecard' => $application->userInterview && (int) $application->userInterview->interviewer_id === (int) request()->user()->id,
+            'canSchedule' => request()->user()->hasAnyRole([
+                Roles::Admin, Roles::HrRecruiter, Roles::HrManager,
+            ]),
+            'canScorecard' => $application->userInterview && (
+                request()->user()->hasAnyRole([Roles::Admin, Roles::HrRecruiter, Roles::HrManager, Roles::HiringManager]) ||
+                (int) $application->userInterview->interviewer_id === (int) request()->user()->id
+            ),
         ]);
     }
 
     public function schedule(ScheduleUserInterviewRequest $request, Application $application): RedirectResponse
     {
-        abort_unless($request->user()->hasAnyRole([Roles::HrRecruiter, Roles::HrManager]), 403);
+        abort_unless($request->user()->hasAnyRole([Roles::Admin, Roles::HrRecruiter, Roles::HrManager]), 403);
         $this->userInterviewService->schedule($application, $request->validated(), $request->user());
 
         return back()->with('success', 'Jadwal interview user berhasil disimpan.');

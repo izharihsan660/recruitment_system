@@ -19,7 +19,7 @@ class HiringDecisionService
             throw ValidationException::withMessages(['application_id' => 'Aplikasi harus berada di stage Hiring Decision.']);
         }
 
-        if (! $actor->hasAnyRole([Roles::HrManager, Roles::HrRecruiter])) {
+        if (! $actor->hasAnyRole([Roles::Admin, Roles::HrManager, Roles::HrRecruiter])) {
             throw ValidationException::withMessages(['actor' => 'Hanya HR Manager atau HR Recruiter yang dapat submit keputusan.']);
         }
 
