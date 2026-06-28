@@ -47,14 +47,16 @@ class EmailIntakeController extends Controller
 
         $this->emailIntakeReviewService->assignToJob($emailIntake, $job, $request->user(), $request->boolean('consent'));
 
-        return redirect()->back()->with('success', 'Aksi berhasil dijalankan.');
+        return redirect()->route('pipeline.index')
+            ->with('success', 'Aksi berhasil dijalankan.');
     }
 
     public function moveToTalentPool(MoveEmailIntakeToTalentPoolRequest $request, EmailIntake $emailIntake): RedirectResponse
     {
         $this->emailIntakeReviewService->moveToTalentPool($emailIntake, $request->user(), $request->boolean('consent'), $request->string('notes')->toString());
 
-        return redirect()->back()->with('success', 'Aksi berhasil dijalankan.');
+        return redirect()->to('/hr/talent-pool')
+            ->with('success', 'Aksi berhasil dijalankan.');
     }
 
     public function reject(RejectEmailIntakeRequest $request, EmailIntake $emailIntake): RedirectResponse

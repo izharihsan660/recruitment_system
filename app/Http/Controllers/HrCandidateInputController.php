@@ -4,21 +4,26 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreHrCandidateJobInputRequest;
 use App\Http\Requests\StoreHrCandidateTalentPoolInputRequest;
-use App\Http\Resources\ApplicationResource;
-use App\Http\Resources\TalentPoolResource;
 use App\Services\HrCandidateInputService;
+use Illuminate\Http\RedirectResponse;
 
 class HrCandidateInputController extends Controller
 {
     public function __construct(private readonly HrCandidateInputService $hrCandidateInputService) {}
 
-    public function inputToJob(StoreHrCandidateJobInputRequest $request): ApplicationResource
+    public function inputToJob(StoreHrCandidateJobInputRequest $request): RedirectResponse
     {
-        return new ApplicationResource($this->hrCandidateInputService->inputToJob($request->validated(), $request->user()));
+        $this->hrCandidateInputService->inputToJob($request->validated(), $request->user());
+
+        return redirect()->route('pipeline.index')
+            ->with('success', 'Kandidat berhasil ditambahkan ke pipeline.');
     }
 
-    public function inputToTalentPool(StoreHrCandidateTalentPoolInputRequest $request): TalentPoolResource
+    public function inputToTalentPool(StoreHrCandidateTalentPoolInputRequest $request): RedirectResponse
     {
-        return new TalentPoolResource($this->hrCandidateInputService->inputToTalentPool($request->validated(), $request->user()));
+        $this->hrCandidateInputService->inputToTalentPool($request->validated(), $request->user());
+
+        return redirect()->to('/hr/talent-pool')
+            ->with('success', 'Kandidat berhasil ditambahkan ke Talent Pool.');
     }
 }

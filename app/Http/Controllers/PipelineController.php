@@ -50,20 +50,23 @@ class PipelineController extends Controller
     {
         $this->pipelineService->moveToNextStage($pipeline, request()->user());
 
-        return redirect()->back()->with('success', 'Aksi berhasil dijalankan.');
+        return redirect()->route('pipeline.index')
+            ->with('success', 'Aksi berhasil dijalankan.');
     }
 
     public function reject(RejectPipelineRequest $request, Application $pipeline): RedirectResponse
     {
         $this->pipelineService->reject($pipeline, $request->user(), $request->string('reason')->toString(), $request->boolean('skip_talent_pool'));
 
-        return redirect()->back()->with('success', 'Aksi berhasil dijalankan.');
+        return redirect()->route('pipeline.index')
+            ->with('success', 'Aksi berhasil dijalankan.');
     }
 
     public function withdraw(Application $pipeline): RedirectResponse
     {
         $this->pipelineService->withdraw($pipeline);
 
-        return redirect()->back()->with('success', 'Aksi berhasil dijalankan.');
+        return redirect()->route('pipeline.index')
+            ->with('success', 'Aksi berhasil dijalankan.');
     }
 }

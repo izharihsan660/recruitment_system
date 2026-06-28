@@ -7,8 +7,10 @@ use App\Models\Application;
 use App\Models\Candidate;
 use App\Models\TalentPool;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class HrCandidateInputService
@@ -19,6 +21,7 @@ class HrCandidateInputService
     {
         return DB::transaction(function () use ($data, $hr): Application {
             $candidate = $this->findOrCreateCandidate($data);
+            $this->updateCandidateProfile($candidate, $data);
 
             return Application::query()->create([
                 'job_posting_id' => $data['job_posting_id'],
@@ -43,6 +46,7 @@ class HrCandidateInputService
     {
         return DB::transaction(function () use ($data, $hr): TalentPool {
             $candidate = $this->findOrCreateCandidate($data);
+            $this->updateCandidateProfile($candidate, $data);
 
             return $this->talentPoolService->addManual($candidate, [
                 'status' => $data['status'] ?? 'active',
@@ -73,5 +77,35 @@ class HrCandidateInputService
         Mail::to($candidate->email)->send(new CandidatePortalCredentialsMail($candidate, $temporaryPassword));
 
         return $candidate;
+    }
+
+    private function updateCandidateProfile(Candidate $candidate, array $data): void
+    {
+        $cvPath = $candidate->cv_path;
+        $cvOriginalName = $candidate->cv_original_name;
+
+        if (($data['cv'] ?? null) instanceof UploadedFile) {
+            if ($candidate->cv_path) {
+                Storage::disk('public')->delete($candidate->cv_path);
+            }
+
+            $cvPath = $data['cv']->store('cvs', 'public');
+            $cvOriginalName = $data['cv']->getClientOriginalName();
+        }
+
+        $candidate->update([
+            'cv_path' => $cvPath,
+            'cv_original_name' => $cvOriginalName,
+            'education' => [
+                'level' => $data['education_level'],
+                'major' => $data['education_major'] ?? null,
+                'institution' => $data['education_institution'] ?? null,
+            ],
+            'experience' => [
+                'company' => $data['experience_company'] ?? null,
+                'position' => $data['experience_position'] ?? null,
+                'years' => $data['experience_years'] ?? null,
+            ],
+        ]);
     }
 }

@@ -24,13 +24,15 @@ class BackgroundCheckController extends Controller
     {
         $this->backgroundCheckService->submit($application, $request->validated(), $request->user());
 
-        return back()->with('success', 'Background check berhasil disimpan.');
+        return redirect()->route('pipeline.index')
+            ->with('success', 'Background check berhasil disimpan.');
     }
 
     public function update(SubmitBackgroundCheckRequest $request, Application $application): RedirectResponse
     {
         $this->backgroundCheckService->submit($application, $request->validated(), $request->user());
 
-        return back()->with('success', 'Background check berhasil diperbarui.');
+        return redirect()->route('pipeline.index')
+            ->with('success', 'Background check berhasil diperbarui.');
     }
 }

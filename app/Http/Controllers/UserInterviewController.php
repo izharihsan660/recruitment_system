@@ -42,7 +42,8 @@ class UserInterviewController extends Controller
         abort_unless($request->user()->hasAnyRole([Roles::Admin, Roles::HrRecruiter, Roles::HrManager]), 403);
         $this->userInterviewService->schedule($application, $request->validated(), $request->user());
 
-        return back()->with('success', 'Jadwal interview user berhasil disimpan.');
+        return redirect()->route('pipeline.index')
+            ->with('success', 'Jadwal interview user berhasil disimpan.');
     }
 
     public function reschedule(ScheduleUserInterviewRequest $request, Application $application): RedirectResponse

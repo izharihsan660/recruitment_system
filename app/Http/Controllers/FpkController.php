@@ -35,7 +35,7 @@ class FpkController extends Controller
     {
         $fpk = $this->recruitmentRequestService->create($request->validated(), $request->user());
 
-        return redirect()->route('fpk.show', $fpk)
+        return redirect()->route('fpk.index')
             ->with('success', 'FPK berhasil dibuat.')
             ->with('created_fpk_id', $fpk->id);
     }
@@ -51,7 +51,7 @@ class FpkController extends Controller
     {
         $fpk = $this->recruitmentRequestService->update($fpk, $request->validated());
 
-        return redirect()->route('fpk.show', $fpk)
+        return redirect()->route('fpk.index')
             ->with('success', 'FPK berhasil diperbarui.');
     }
 

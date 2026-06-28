@@ -28,7 +28,8 @@ class JobPostingController extends Controller
         $fpk = RecruitmentRequest::query()->findOrFail($request->integer('recruitment_request_id'));
         $this->jobPostingService->createFromFpk($fpk, $request->validated(), $request->user());
 
-        return redirect()->back()->with('success', 'Job Posting berhasil dibuat.');
+        return redirect()->route('job-postings.index')
+            ->with('success', 'Job Posting berhasil dibuat.');
     }
 
     public function show(JobPosting $jobPosting): JobPostingResource

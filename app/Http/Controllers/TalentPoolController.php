@@ -51,14 +51,16 @@ class TalentPoolController extends Controller
 
         $this->talentPoolService->addManual($candidate, $request->validated(), $request->user());
 
-        return redirect()->back()->with('success', 'Talent Pool berhasil dibuat.');
+        return redirect()->to('/hr/talent-pool')
+            ->with('success', 'Talent Pool berhasil dibuat.');
     }
 
     public function update(UpdateTalentPoolRequest $request, TalentPool $talentPool): RedirectResponse
     {
         $talentPool->update($request->validated());
 
-        return redirect()->back()->with('success', 'Talent Pool berhasil diperbarui.');
+        return redirect()->to("/hr/talent-pool/{$talentPool->id}")
+            ->with('success', 'Talent Pool berhasil diperbarui.');
     }
 
     public function assignToJob(AssignTalentPoolToJobRequest $request, TalentPool $talentPool): RedirectResponse
@@ -67,6 +69,7 @@ class TalentPoolController extends Controller
 
         $this->talentPoolService->assignToJob($talentPool, $job, $request->user());
 
-        return redirect()->back()->with('success', 'Aksi berhasil dijalankan.');
+        return redirect()->route('pipeline.index')
+            ->with('success', 'Aksi berhasil dijalankan.');
     }
 }

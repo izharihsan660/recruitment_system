@@ -34,7 +34,8 @@ class HrInterviewController extends Controller
     {
         $this->hrInterviewService->schedule($application, $request->validated(), $request->user());
 
-        return back()->with('success', 'Jadwal interview HR berhasil disimpan.');
+        return redirect()->route('pipeline.index')
+            ->with('success', 'Jadwal interview HR berhasil disimpan.');
     }
 
     public function scorecard(SubmitHrInterviewScorecardRequest $request, Application $application): RedirectResponse
