@@ -1,8 +1,22 @@
-import ConfirmDialog from '@/Components/ConfirmDialog';
-import { SelectInput } from '@/Components/shared/ui';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    Badge,
+    Button,
+    FieldError,
+    FormLabel,
+    SelectInput,
+    TextInput,
+} from '@/Components/shared/ui';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { PageProps } from '@/types';
-import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { FormEvent, useState } from 'react';
 
 interface Employee {
@@ -31,14 +45,28 @@ interface ChecklistItem {
 
 interface Checklist {
     id: number;
-    status: string;
+    status: 'not_started' | 'in_progress' | 'completed';
     first_day?: string;
     items: ChecklistItem[];
 }
 
+type BadgeTone = 'slate' | 'green' | 'yellow' | 'red' | 'orange' | 'blue';
+
+const preboardingItemStatusMap: Record<ChecklistItem['status'], { label: string; tone: BadgeTone }> = {
+    pending: { label: 'Belum Dimulai', tone: 'slate' },
+    in_progress: { label: 'Sedang Berjalan', tone: 'yellow' },
+    done: { label: 'Selesai', tone: 'green' },
+};
+
+const preboardingChecklistStatusMap: Record<Checklist['status'], { label: string; tone: BadgeTone }> = {
+    not_started: { label: 'Belum Dimulai', tone: 'slate' },
+    in_progress: { label: 'Sedang Berjalan', tone: 'yellow' },
+    completed: { label: 'Selesai', tone: 'green' },
+};
+
 interface ProbationEvaluation {
     id: number;
-    milestone: 'day30' | 'day60' | 'day90';
+    milestone: 'day30' | 'day60' | 'day90' | 'extended';
     performance_notes: string;
     recommendation: string;
     evaluated_at: string;
@@ -53,6 +81,7 @@ interface ProbationRecord {
     day30_due: string;
     day60_due: string;
     day90_due: string;
+    extended_start_date?: string | null;
     extended_until?: string | null;
     evaluations?: ProbationEvaluation[];
 }
@@ -67,7 +96,17 @@ type ActiveTab = 'info' | 'preboarding' | 'probation';
 interface EvaluationFormData {
     milestone: string;
     performance_notes: string;
-    recommendation: string;
+    recommendation?: string;
+    extended_start_date?: string;
+    extended_end_date?: string;
+}
+
+interface EmployeeFormData {
+    employee_id: string;
+    start_date: string;
+    end_date: string;
+    contract_type: string;
+    status: string;
 }
 
 export default function Show({
@@ -84,13 +123,17 @@ export default function Show({
     const { errors } = usePage<PageProps>().props;
     const [activeTab, setActiveTab] = useState<ActiveTab>('info');
     const [deleteItemId, setDeleteItemId] = useState<number | null>(null);
-    const [confirmTerminate, setConfirmTerminate] = useState(false);
+    const [editOpen, setEditOpen] = useState(false);
     const itemForm = useForm({ title: '', description: '' });
+    const employeeForm = useForm<EmployeeFormData>({
+        employee_id: employee.employee_id ?? '',
+        start_date: dateInputValue(employee.start_date),
+        end_date: dateInputValue(employee.end_date),
+        contract_type: employee.contract_type,
+        status: employee.status,
+    });
     const activeMilestone = probation ? currentMilestone(probation.status) : null;
-    const evalForm = useForm<EvaluationFormData>({ milestone: activeMilestone ?? '', performance_notes: '', recommendation: 'permanent' });
-    const outcomeForm = useForm({ outcome: 'permanent', extended_until: '' });
-
-    const canSubmitOutcome = probation ? ['90_day_review', 'day90_review', 'extended'].includes(probation.status) : false;
+    const evalForm = useForm<EvaluationFormData>({ milestone: activeMilestone ?? '', performance_notes: '', recommendation: '', extended_start_date: '', extended_end_date: '' });
 
     function submitItem(event: FormEvent): void {
         event.preventDefault();
@@ -104,7 +147,18 @@ export default function Show({
             return;
         }
 
-        router.delete(`/hr/preboarding/items/${deleteItemId}`, { onFinish: () => setDeleteItemId(null) });
+        router.delete(`/hr/preboarding/items/${deleteItemId}`, {
+            preserveScroll: true,
+            only: ['checklist'],
+            onFinish: () => setDeleteItemId(null),
+        });
+    }
+
+    function completeItem(itemId: number): void {
+        router.post(`/hr/preboarding/items/${itemId}/complete`, {}, {
+            preserveScroll: true,
+            only: ['checklist'],
+        });
     }
 
     function submitEvaluation(event: FormEvent): void {
@@ -116,13 +170,13 @@ export default function Show({
         evalForm.post(`/hr/probation/${probation.id}/evaluate`);
     }
 
-    function submitOutcome(event?: FormEvent): void {
-        event?.preventDefault();
-        if (!probation) {
-            return;
-        }
+    function submitEmployee(event: FormEvent): void {
+        event.preventDefault();
 
-        outcomeForm.post(`/hr/probation/${probation.id}/outcome`, { onFinish: () => setConfirmTerminate(false) });
+        employeeForm.put(`/hr/employees/${employee.id}`, {
+            preserveScroll: true,
+            onSuccess: () => setEditOpen(false),
+        });
     }
 
     return (
@@ -135,13 +189,23 @@ export default function Show({
             )}
 
             <div className="rounded-lg border bg-white p-6">
-                <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
-                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xl font-semibold text-blue-700">
-                        {initials(employee.full_name)}
+                <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xl font-semibold text-blue-700">
+                            {initials(employee.full_name)}
+                        </div>
+                        <div>
+                            <p className="text-2xl font-semibold text-slate-900">{employee.full_name}</p>
+                            <p className="text-sm text-slate-500">{employee.employee_id} · {employee.position_name}</p>
+                        </div>
                     </div>
-                    <div>
-                        <p className="text-2xl font-semibold text-slate-900">{employee.full_name}</p>
-                        <p className="text-sm text-slate-500">{employee.employee_id} · {employee.position_name}</p>
+                    <div className="flex gap-2">
+                        <Link href="/hr/employees" className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+                            Back
+                        </Link>
+                        <Button type="button" variant="primary" onClick={() => setEditOpen(true)}>
+                            Edit
+                        </Button>
                     </div>
                 </div>
 
@@ -170,25 +234,92 @@ export default function Show({
                         itemForm={itemForm}
                         onSubmitItem={submitItem}
                         onDeleteItem={setDeleteItemId}
+                        onCompleteItem={completeItem}
                     />
                 )}
                 {activeTab === 'probation' && (
                     <ProbationTab
                         probation={probation}
                         evalForm={evalForm}
-                        outcomeForm={outcomeForm}
-                        canSubmitOutcome={canSubmitOutcome}
                         onSubmitEvaluation={submitEvaluation}
-                        onSubmitOutcome={(event) => {
-                            event.preventDefault();
-                            outcomeForm.data.outcome === 'terminated' ? setConfirmTerminate(true) : submitOutcome();
-                        }}
                     />
                 )}
             </div>
 
-            <ConfirmDialog open={deleteItemId !== null} title="Hapus item preboarding?" message="Item checklist ini akan dihapus." confirmLabel="Ya, Hapus" onConfirm={deleteItem} onCancel={() => setDeleteItemId(null)} />
-            <ConfirmDialog open={confirmTerminate} title="Terminate probation?" message="Karyawan akan ditandai terminasi dari proses probation." confirmLabel="Ya, Terminasi" onConfirm={() => submitOutcome()} onCancel={() => setConfirmTerminate(false)} />
+            <AlertDialog open={deleteItemId !== null}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Hapus item pre-boarding?</AlertDialogTitle>
+                        <AlertDialogDescription>Yakin ingin menghapus item ini? Tindakan ini tidak dapat dibatalkan.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setDeleteItemId(null)}>Batal</AlertDialogCancel>
+                        <AlertDialogAction onClick={deleteItem}>Hapus</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            {editOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+                    <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-xl">
+                        <div className="mb-4 flex items-start justify-between gap-4">
+                            <div>
+                                <h2 className="text-lg font-semibold text-slate-900">Edit Karyawan</h2>
+                                <p className="text-sm text-slate-500">Perbarui data kontrak dan status karyawan.</p>
+                            </div>
+                            <Button type="button" variant="ghost" onClick={() => setEditOpen(false)}>Tutup</Button>
+                        </div>
+
+                        <form onSubmit={submitEmployee} className="space-y-5">
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <ReadOnlyField label="Posisi" value={employee.position_name} />
+                                <ReadOnlyField label="Departemen" value={employee.department?.name ?? '-'} />
+                                <ReadOnlyField label="Entitas (PT)" value={employee.entity?.name ?? '-'} />
+                                <ReadOnlyField label="Email" value={employee.email} />
+                            </div>
+
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <div>
+                                    <FormLabel>Employee ID</FormLabel>
+                                    <TextInput value={employeeForm.data.employee_id} onChange={(event) => employeeForm.setData('employee_id', event.target.value)} />
+                                    <FieldError message={employeeForm.errors.employee_id} />
+                                </div>
+                                <div>
+                                    <FormLabel required>Tanggal Mulai</FormLabel>
+                                    <TextInput type="date" value={employeeForm.data.start_date} onChange={(event) => employeeForm.setData('start_date', event.target.value)} />
+                                    <FieldError message={employeeForm.errors.start_date} />
+                                </div>
+                                <div>
+                                    <FormLabel>Tanggal Selesai</FormLabel>
+                                    <TextInput type="date" value={employeeForm.data.end_date} onChange={(event) => employeeForm.setData('end_date', event.target.value)} />
+                                    <FieldError message={employeeForm.errors.end_date} />
+                                </div>
+                                <div>
+                                    <FormLabel required>Tipe Kontrak</FormLabel>
+                                    <SelectInput value={employeeForm.data.contract_type} onChange={(event) => employeeForm.setData('contract_type', event.target.value)}>
+                                        <option value="permanent">Permanent</option>
+                                        <option value="contract">Contract</option>
+                                        <option value="internship">Internship</option>
+                                    </SelectInput>
+                                    <FieldError message={employeeForm.errors.contract_type} />
+                                </div>
+                                <div>
+                                    <FormLabel required>Status</FormLabel>
+                                    <SelectInput value={employeeForm.data.status} onChange={(event) => employeeForm.setData('status', event.target.value)}>
+                                        <option value="active">Active</option>
+                                        <option value="inactive">Inactive</option>
+                                    </SelectInput>
+                                    <FieldError message={employeeForm.errors.status} />
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end gap-2">
+                                <Button type="button" variant="secondary" onClick={() => setEditOpen(false)}>Batal</Button>
+                                <Button type="submit" disabled={employeeForm.processing}>{employeeForm.processing ? 'Menyimpan...' : 'Simpan'}</Button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </AuthenticatedLayout>
     );
 }
@@ -203,7 +334,6 @@ function EmployeeInfoTab({ employee }: { employee: Employee }): JSX.Element {
         ['Tanggal Mulai', formatDate(employee.start_date)],
         ['Tanggal Selesai', employee.end_date ? formatDate(employee.end_date) : '-'],
         ['Entitas', employee.entity?.name ?? '-'],
-        ['Status', employee.status],
     ];
 
     return (
@@ -214,8 +344,25 @@ function EmployeeInfoTab({ employee }: { employee: Employee }): JSX.Element {
                     <p className="mt-1 font-medium text-slate-900">{value}</p>
                 </div>
             ))}
+            <div className="rounded-lg border border-slate-200 p-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Status</p>
+                <div className="mt-2"><EmployeeStatusBadge status={employee.status} /></div>
+            </div>
         </div>
     );
+}
+
+function ReadOnlyField({ label, value }: { label: string; value: string }): JSX.Element {
+    return (
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
+            <p className="mt-1 text-sm font-medium text-slate-900">{value}</p>
+        </div>
+    );
+}
+
+function EmployeeStatusBadge({ status }: { status: string }): JSX.Element {
+    return <Badge tone={status === 'active' ? 'green' : 'red'}>{status === 'active' ? 'Aktif' : 'Tidak Aktif'}</Badge>;
 }
 
 function PreboardingTab({
@@ -224,12 +371,14 @@ function PreboardingTab({
     itemForm,
     onSubmitItem,
     onDeleteItem,
+    onCompleteItem,
 }: {
     checklist: Checklist;
     users: UserOption[];
     itemForm: ReturnType<typeof useForm<{ title: string; description: string }>>;
     onSubmitItem: (event: FormEvent) => void;
     onDeleteItem: (itemId: number) => void;
+    onCompleteItem: (itemId: number) => void;
 }): JSX.Element {
     const doneCount = checklist.items.filter((item) => item.status === 'done').length;
     const totalCount = checklist.items.length;
@@ -243,7 +392,7 @@ function PreboardingTab({
                         <p className="font-semibold text-slate-900">Progress Pre-boarding</p>
                         <p className="text-sm text-slate-500">{doneCount} dari {totalCount} selesai</p>
                     </div>
-                    <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">{checklist.status}</span>
+                    <PreboardingChecklistStatusBadge status={checklist.status} />
                 </div>
                 <div className="mt-3 h-2 rounded bg-slate-100">
                     <div className="h-2 rounded bg-blue-600" style={{ width: `${progress}%` }} />
@@ -264,15 +413,15 @@ function PreboardingTab({
                             {item.description && <p className="mt-1 text-sm text-slate-500">{item.description}</p>}
                             <p className="mt-2 text-sm text-slate-500">PIC: {item.pic?.name ?? '-'}</p>
                         </div>
-                        <StatusBadge status={item.status} />
+                        <PreboardingItemStatusBadge status={item.status} />
                     </div>
                     <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                         <SelectInput
                             value={String(item.assigned_to ?? '')}
                             onChange={(event) => {
                                 router.post(`/hr/preboarding/items/${item.id}/assign`, {
-                                    user_id: event.target.value,
-                                }, { preserveScroll: true });
+                                    assigned_to: event.target.value,
+                                }, { preserveScroll: true, only: ['checklist'] });
                             }}
                         >
                             <option value="">Pilih PIC</option>
@@ -282,10 +431,10 @@ function PreboardingTab({
                                 </option>
                             ))}
                         </SelectInput>
-                        {item.status !== 'done' && (
-                            <button type="button" className="rounded bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700" onClick={() => router.post(`/hr/preboarding/items/${item.id}/complete`)}>Selesai</button>
+                        {['pending', 'in_progress'].includes(item.status) && (
+                            <Button type="button" variant="primary" onClick={() => onCompleteItem(item.id)}>Selesai</Button>
                         )}
-                        <button type="button" className="rounded bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700" onClick={() => onDeleteItem(item.id)}>Hapus</button>
+                        <Button type="button" variant="danger" onClick={() => onDeleteItem(item.id)}>Hapus</Button>
                     </div>
                 </div>
             ))}
@@ -296,17 +445,11 @@ function PreboardingTab({
 function ProbationTab({
     probation,
     evalForm,
-    outcomeForm,
-    canSubmitOutcome,
     onSubmitEvaluation,
-    onSubmitOutcome,
 }: {
     probation?: ProbationRecord | null;
     evalForm: ReturnType<typeof useForm<EvaluationFormData>>;
-    outcomeForm: ReturnType<typeof useForm<{ outcome: string; extended_until: string }>>;
-    canSubmitOutcome: boolean;
     onSubmitEvaluation: (event: FormEvent) => void;
-    onSubmitOutcome: (event: FormEvent) => void;
 }): JSX.Element {
     if (!probation) {
         return <div className="rounded-lg border border-slate-200 p-4 text-sm text-slate-500">Data probation belum tersedia.</div>;
@@ -315,6 +458,7 @@ function ProbationTab({
     const day30Eval = probation.evaluations?.find((evaluation) => evaluation.milestone === 'day30');
     const day60Eval = probation.evaluations?.find((evaluation) => evaluation.milestone === 'day60');
     const day90Eval = probation.evaluations?.find((evaluation) => evaluation.milestone === 'day90');
+    const extendedEval = probation.evaluations?.find((evaluation) => evaluation.milestone === 'extended');
     const activeMilestone = currentMilestone(probation.status);
 
     return (
@@ -328,8 +472,8 @@ function ProbationTab({
             </div>
 
             {probation.extended_until && (
-                <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
-                    Probation diperpanjang sampai {formatWITA(probation.extended_until)}.
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+                    Probation diperpanjang {probation.extended_start_date ? `mulai ${formatWITA(probation.extended_start_date)} ` : ''}sampai {formatWITA(probation.extended_until)}.
                 </div>
             )}
 
@@ -339,19 +483,8 @@ function ProbationTab({
                 <MilestoneCard title="90 hari" milestone="day90" dueDate={probation.day90_due} evaluation={day90Eval} isCurrent={activeMilestone === 'day90'} evalForm={evalForm} onSubmitEvaluation={onSubmitEvaluation} />
             </div>
 
-            {canSubmitOutcome && (
-                <form onSubmit={onSubmitOutcome} className="space-y-3 rounded-lg border border-slate-200 p-4">
-                    <p className="font-semibold text-slate-900">Input Outcome Probation</p>
-                    <select className="rounded border border-slate-300 p-2 text-sm" value={outcomeForm.data.outcome} onChange={(event) => outcomeForm.setData('outcome', event.target.value)}>
-                        <option value="permanent">Permanent</option>
-                        <option value="extended">Extended</option>
-                        <option value="terminated">Terminated</option>
-                    </select>
-                    {outcomeForm.data.outcome === 'extended' && (
-                        <input type="date" className="rounded border border-slate-300 p-2 text-sm" value={outcomeForm.data.extended_until} onChange={(event) => outcomeForm.setData('extended_until', event.target.value)} />
-                    )}
-                    <button type="submit" className="rounded bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700" disabled={outcomeForm.processing}>Submit Outcome</button>
-                </form>
+            {(probation.status === 'extended' || extendedEval) && (
+                <MilestoneCard title="Evaluasi Extended" milestone="extended" dueDate={probation.extended_until ?? probation.day90_due} evaluation={extendedEval} isCurrent={activeMilestone === 'extended'} evalForm={evalForm} onSubmitEvaluation={onSubmitEvaluation} />
             )}
         </div>
     );
@@ -374,7 +507,12 @@ function MilestoneCard({
     evalForm: ReturnType<typeof useForm<EvaluationFormData>>;
     onSubmitEvaluation: (event: FormEvent) => void;
 }): JSX.Element {
-    const badge = milestoneBadge(evaluation, isCurrent);
+    const canEvaluate = isCurrent && isDue(dueDate);
+    const badge = milestoneBadge(evaluation, canEvaluate, milestone);
+    const isFinalMilestone = milestone === 'day90' || milestone === 'extended';
+    const canExtend = milestone === 'day90';
+    const submitLabel = isFinalMilestone ? (milestone === 'extended' ? 'Simpan & Tentukan Outcome Final' : 'Simpan & Tentukan Outcome') : 'Simpan Evaluasi';
+    const isActiveForm = evalForm.data.milestone === milestone;
 
     return (
         <div className="space-y-3 rounded-lg border border-slate-200 p-4">
@@ -393,31 +531,68 @@ function MilestoneCard({
                         <p className="font-medium text-slate-700">Catatan</p>
                         <p className="text-slate-600">{evaluation.performance_notes}</p>
                     </div>
-                    <div>
-                        <p className="font-medium text-slate-700">Rekomendasi</p>
-                        <p className="text-slate-600">{evaluation.recommendation}</p>
-                    </div>
+                    {isFinalMilestone && (
+                        <div>
+                            <p className="font-medium text-slate-700">Outcome</p>
+                            <p className="text-slate-600">{statusLabel(evaluation.recommendation)}</p>
+                        </div>
+                    )}
                 </div>
             )}
 
-            {!evaluation && isCurrent && (
+            {!evaluation && canEvaluate && (
                 <form onSubmit={onSubmitEvaluation} className="space-y-3">
                     <p className="font-semibold text-slate-900">Form Evaluasi</p>
-                    <textarea className="w-full rounded border border-slate-300 p-2 text-sm" placeholder="Catatan performance" value={evalForm.data.performance_notes} onChange={(event) => evalForm.setData('performance_notes', event.target.value)} />
-                    <select className="rounded border border-slate-300 p-2 text-sm" value={evalForm.data.recommendation} onChange={(event) => evalForm.setData('recommendation', event.target.value)}>
-                        <option value="permanent">Permanent</option>
-                        <option value="extended">Extended</option>
-                        <option value="terminated">Terminated</option>
-                    </select>
-                    <button type="submit" className="rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700" disabled={evalForm.processing || evalForm.data.milestone !== milestone}>Simpan Evaluasi</button>
+                    <textarea
+                        className="min-h-24 w-full rounded border border-slate-300 p-2 text-sm focus:border-blue-500 focus:outline-none"
+                        placeholder="Catatan evaluasi hiring manager"
+                        value={isActiveForm ? evalForm.data.performance_notes : ''}
+                        onChange={(event) => {
+                            evalForm.setData('milestone', milestone);
+                            evalForm.setData('performance_notes', event.target.value);
+                        }}
+                    />
+                    {isFinalMilestone && (
+                        <div className="space-y-3">
+                            <SelectInput
+                                value={isActiveForm ? evalForm.data.recommendation ?? '' : ''}
+                                onChange={(event) => {
+                                    evalForm.setData('milestone', milestone);
+                                    evalForm.setData('recommendation', event.target.value);
+                                }}
+                            >
+                                <option value="">Pilih outcome</option>
+                                <option value="permanent">Permanent</option>
+                                {canExtend && <option value="extended">Extended</option>}
+                                <option value="terminated">Terminated</option>
+                            </SelectInput>
+                            {canExtend && isActiveForm && evalForm.data.recommendation === 'extended' && (
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                    <div>
+                                        <FormLabel required>Tanggal Mulai Extended</FormLabel>
+                                        <TextInput type="date" value={evalForm.data.extended_start_date ?? ''} onChange={(event) => evalForm.setData('extended_start_date', event.target.value)} />
+                                    </div>
+                                    <div>
+                                        <FormLabel required>Tanggal Selesai Extended</FormLabel>
+                                        <TextInput type="date" value={evalForm.data.extended_end_date ?? ''} onChange={(event) => evalForm.setData('extended_end_date', event.target.value)} />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    <button type="submit" className="rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700" disabled={evalForm.processing || !isActiveForm}>{submitLabel}</button>
                 </form>
             )}
         </div>
     );
 }
 
-function milestoneBadge(evaluation: ProbationEvaluation | undefined, isCurrent: boolean): { label: string; className: string } {
+function milestoneBadge(evaluation: ProbationEvaluation | undefined, isCurrent: boolean, milestone?: ProbationMilestone): { label: string; className: string } {
     if (evaluation) {
+        if (milestone === 'extended') {
+            return { label: 'Extended', className: 'bg-blue-100 text-blue-700' };
+        }
+
         return { label: 'Selesai', className: 'bg-green-100 text-green-700' };
     }
 
@@ -426,6 +601,18 @@ function milestoneBadge(evaluation: ProbationEvaluation | undefined, isCurrent: 
     }
 
     return { label: 'Belum', className: 'bg-slate-100 text-slate-500' };
+}
+
+function PreboardingItemStatusBadge({ status }: { status: ChecklistItem['status'] }): JSX.Element {
+    const config = preboardingItemStatusMap[status];
+
+    return <Badge tone={config.tone}>{config.label}</Badge>;
+}
+
+function PreboardingChecklistStatusBadge({ status }: { status: Checklist['status'] }): JSX.Element {
+    const config = preboardingChecklistStatusMap[status];
+
+    return <Badge tone={config.tone}>{config.label}</Badge>;
 }
 
 function StatusBadge({ status }: { status: string }): JSX.Element {
@@ -451,7 +638,17 @@ function statusColor(status: string): string {
 }
 
 function statusLabel(status: string): string {
-    return status.replaceAll('_', ' ');
+    const labels: Record<string, string> = {
+        in_progress: 'Berjalan',
+        day30_review: '30-Day Review',
+        day60_review: '60-Day Review',
+        day90_review: '90-Day Review',
+        extended: 'Extended',
+        permanent: 'Permanent',
+        terminated: 'Terminated',
+    };
+
+    return labels[status] ?? status.replaceAll('_', ' ');
 }
 
 function currentMilestone(status: string): ProbationMilestone | null {
@@ -459,6 +656,7 @@ function currentMilestone(status: string): ProbationMilestone | null {
         day30_review: 'day30',
         day60_review: 'day60',
         day90_review: 'day90',
+        extended: 'extended',
     };
 
     return milestones[status] ?? null;
@@ -484,6 +682,22 @@ function formatDate(date: string): string {
         month: 'short',
         year: 'numeric',
     });
+}
+
+function dateInputValue(date?: string | null): string {
+    if (!date) {
+        return '';
+    }
+
+    return date.slice(0, 10);
+}
+
+function isDue(date?: string | null): boolean {
+    if (!date) {
+        return false;
+    }
+
+    return new Date(date).setHours(0, 0, 0, 0) <= new Date().setHours(0, 0, 0, 0);
 }
 
 function formatWITA(isoString?: string | null): string {

@@ -3,12 +3,15 @@
 namespace Tests\Feature;
 
 use App\Models\Application;
+use App\Models\Department;
 use App\Models\Employee;
+use App\Models\Entity;
 use App\Models\PkwtContract;
 use App\Models\User;
 use App\Support\Roles;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
 class ActiveEmployeeTest extends TestCase
@@ -40,6 +43,93 @@ class ActiveEmployeeTest extends TestCase
         $application = $this->hiredApplicationWithPkwt('archived');
 
         $this->actingAs($this->hrUser())->post("/hr/employees/{$application->id}/activate", ['employee_id' => 'EMP-003', 'start_date' => now()->toDateString()])->assertSessionHasErrors('employee_id');
+    }
+
+    public function test_employee_index_bisa_difilter_search_department_entity_dan_status(): void
+    {
+        $entity = Entity::factory()->create(['name' => 'PT Mineral Utama']);
+        $department = Department::factory()->create(['entity_id' => $entity->id, 'name' => 'Human Capital']);
+        $matched = Employee::query()->create($this->employeePayload([
+            'entity_id' => $entity->id,
+            'department_id' => $department->id,
+            'employee_id' => 'EMP-FILTER-001',
+            'full_name' => 'Budi Filter',
+            'status' => 'inactive',
+        ]));
+        Employee::query()->create($this->employeePayload(['employee_id' => 'EMP-OTHER-001', 'full_name' => 'Siti Lain']));
+
+        $this->actingAs($this->hrUser())
+            ->get('/hr/employees?search=FILTER&department_id='.$department->id.'&entity_id='.$entity->id.'&status=inactive')
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Employees/Index')
+                ->where('employees.data.0.id', $matched->id)
+                ->has('employees.data', 1)
+                ->where('filters.search', 'FILTER')
+                ->where('filters.department_id', (string) $department->id)
+                ->where('filters.entity_id', (string) $entity->id)
+                ->where('filters.status', 'inactive')
+            );
+    }
+
+    public function test_employee_show_mengirim_pic_user_aktif_urut_nama(): void
+    {
+        $employee = Employee::query()->create($this->employeePayload());
+        $zaki = User::factory()->create(['name' => 'Zaki PIC', 'is_active' => true]);
+        $andi = User::factory()->create(['name' => 'Andi PIC', 'is_active' => true]);
+        User::factory()->create(['name' => 'Nonaktif PIC', 'is_active' => false]);
+
+        $this->actingAs($this->hrUser())
+            ->get("/hr/employees/{$employee->id}")
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Employees/Show')
+                ->where('users', fn ($users): bool => collect($users)
+                    ->whereIn('id', [$andi->id, $zaki->id])
+                    ->pluck('name')
+                    ->values()
+                    ->all() === ['Andi PIC', 'Zaki PIC'])
+                ->missing('users.0.email')
+            );
+    }
+
+    public function test_employee_update_hanya_mengubah_field_editable(): void
+    {
+        $employee = Employee::query()->create($this->employeePayload(['employee_id' => 'EMP-OLD']));
+
+        $this->actingAs($this->hrUser())
+            ->put("/hr/employees/{$employee->id}", [
+                'employee_id' => 'EMP-NEW',
+                'start_date' => now()->addDay()->toDateString(),
+                'end_date' => now()->addMonth()->toDateString(),
+                'contract_type' => 'permanent',
+                'status' => 'inactive',
+            ])
+            ->assertRedirect("/hr/employees/{$employee->id}")
+            ->assertSessionHas('success', 'Data karyawan berhasil diperbarui.');
+
+        $employee->refresh();
+
+        $this->assertSame('EMP-NEW', $employee->employee_id);
+        $this->assertSame('permanent', $employee->contract_type);
+        $this->assertSame('inactive', $employee->status);
+        $this->assertSame(now()->addDay()->toDateString(), $employee->start_date->toDateString());
+        $this->assertSame(now()->addMonth()->toDateString(), $employee->end_date?->toDateString());
+    }
+
+    public function test_employee_update_memvalidasi_tanggal_selesai_setelah_tanggal_mulai(): void
+    {
+        $employee = Employee::query()->create($this->employeePayload());
+
+        $this->actingAs($this->hrUser())
+            ->put("/hr/employees/{$employee->id}", [
+                'employee_id' => 'EMP-INVALID',
+                'start_date' => now()->toDateString(),
+                'end_date' => now()->subDay()->toDateString(),
+                'contract_type' => 'contract',
+                'status' => 'active',
+            ])
+            ->assertSessionHasErrors('end_date');
     }
 
     private function hiredApplicationWithPkwt(string $archiveStatus): Application

@@ -13,6 +13,12 @@ class UpdateEmployeeRequest extends FormRequest
 
     public function rules(): array
     {
-        return ['phone' => ['nullable', 'string', 'max:255'], 'email' => ['required', 'email', 'max:255'], 'status' => ['sometimes', 'in:pending_activation,active,cancelled']];
+        return [
+            'employee_id' => ['nullable', 'string', 'max:50'],
+            'start_date' => ['required', 'date'],
+            'end_date' => ['nullable', 'date', 'after:start_date'],
+            'contract_type' => ['required', 'in:permanent,contract,internship'],
+            'status' => ['required', 'in:active,inactive'],
+        ];
     }
 }

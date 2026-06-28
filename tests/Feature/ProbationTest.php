@@ -23,15 +23,26 @@ class ProbationTest extends TestCase
         $this->assertSame('in_progress', $record->status);
     }
 
-    public function test_hiring_manager_submit_evaluasi_day30_status_update(): void
+    public function test_hiring_manager_submit_evaluasi_day30_tanpa_outcome_status_update(): void
     {
         $employee = $this->employee();
         $record = app(ProbationService::class)->create($employee);
         $manager = $this->user(Roles::HiringManager, $employee->department_id);
 
-        app(ProbationService::class)->submitEvaluation($record, ['milestone' => 'day30', 'performance_notes' => 'Baik', 'recommendation' => 'permanent'], $manager);
+        app(ProbationService::class)->submitEvaluation($record, ['milestone' => 'day30', 'performance_notes' => 'Baik'], $manager);
 
         $this->assertSame('day60_review', $record->refresh()->status);
+    }
+
+    public function test_milestone_60_hanya_bisa_setelah_day30_selesai(): void
+    {
+        $employee = $this->employee();
+        $record = app(ProbationService::class)->create($employee);
+        $manager = $this->user(Roles::HiringManager, $employee->department_id);
+
+        $this->expectException(ValidationException::class);
+
+        app(ProbationService::class)->submitEvaluation($record, ['milestone' => 'day60', 'performance_notes' => 'Baik'], $manager);
     }
 
     public function test_hr_submit_outcome_extended_increment_dan_maksimal_satu_kali(): void
@@ -44,6 +55,30 @@ class ProbationTest extends TestCase
 
         $this->expectException(ValidationException::class);
         app(ProbationService::class)->submitOutcome($record->refresh(), 'extended', $hr, now()->addMonths(2)->toDateString());
+    }
+
+    public function test_day90_extended_membuat_milestone_extended_lalu_final_permanent(): void
+    {
+        $employee = $this->employee();
+        $record = app(ProbationService::class)->create($employee);
+        $manager = $this->user(Roles::HiringManager, $employee->department_id);
+
+        app(ProbationService::class)->submitEvaluation($record, ['milestone' => 'day30', 'performance_notes' => 'Baik'], $manager);
+        app(ProbationService::class)->submitEvaluation($record->refresh(), ['milestone' => 'day60', 'performance_notes' => 'Baik'], $manager);
+        app(ProbationService::class)->submitEvaluation($record->refresh(), [
+            'milestone' => 'day90',
+            'performance_notes' => 'Perlu tambahan waktu',
+            'recommendation' => 'extended',
+            'extended_start_date' => now()->addDay()->toDateString(),
+            'extended_end_date' => now()->addMonth()->toDateString(),
+        ], $manager);
+
+        $this->assertSame('extended', $record->refresh()->status);
+        $this->assertSame(1, $record->extension_count);
+
+        app(ProbationService::class)->submitEvaluation($record->refresh(), ['milestone' => 'extended', 'performance_notes' => 'Sudah siap', 'recommendation' => 'permanent'], $manager);
+
+        $this->assertDatabaseHas('probation_records', ['id' => $record->id, 'final_outcome' => 'permanent', 'status' => 'permanent']);
     }
 
     public function test_hr_submit_outcome_permanent_set_final_outcome(): void

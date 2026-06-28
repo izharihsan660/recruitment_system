@@ -29,7 +29,7 @@ class ProbationService
     public function submitEvaluation(ProbationRecord $probation, array $data, User $actor): ProbationEvaluation
     {
         $probation->loadMissing('employee');
-        if (! $actor->hasRole(Roles::Admin) && (! $actor->hasRole(Roles::HiringManager) || (int) $actor->department_id !== (int) $probation->employee->department_id)) {
+        if (! $this->canSubmitEvaluation($actor, $probation, $data['milestone'])) {
             throw ValidationException::withMessages(['actor' => 'Hanya hiring manager departemen terkait yang dapat evaluasi.']);
         }
 
@@ -38,19 +38,21 @@ class ProbationService
             throw ValidationException::withMessages(['milestone' => 'Milestone evaluasi tidak sesuai status probation.']);
         }
 
+        $recommendation = $data['recommendation'] ?? null;
+
         $evaluation = $probation->evaluations()->create([
             'milestone' => $data['milestone'],
             'evaluator_id' => $actor->id,
             'performance_notes' => $data['performance_notes'],
-            'recommendation' => $data['recommendation'],
+            'recommendation' => $recommendation ?? 'permanent',
             'evaluated_at' => now(),
         ]);
 
-        $probation->update(['status' => match ($data['milestone']) {
-            'day30' => 'day60_review',
-            'day60' => 'day90_review',
-            'day90', 'extended' => $probation->status,
-        }]);
+        match ($data['milestone']) {
+            'day30' => $probation->update(['status' => 'day60_review']),
+            'day60' => $probation->update(['status' => 'day90_review']),
+            'day90', 'extended' => $this->applyOutcome($probation, $recommendation, $data),
+        };
 
         return $evaluation;
     }
@@ -61,11 +63,33 @@ class ProbationService
             throw ValidationException::withMessages(['actor' => 'Hanya HR yang dapat submit outcome probation.']);
         }
 
+        $this->applyOutcome($probation, $outcome, ['extended_end_date' => $extendedUntil]);
+    }
+
+    /**
+     * @param  array{extended_start_date?: string|null, extended_end_date?: string|null}  $data
+     */
+    private function applyOutcome(ProbationRecord $probation, ?string $outcome, array $data = []): void
+    {
+        if (! $outcome) {
+            throw ValidationException::withMessages(['recommendation' => 'Outcome wajib dipilih.']);
+        }
+
         if ($outcome === 'extended') {
             if ($probation->extension_count >= 1) {
                 throw ValidationException::withMessages(['outcome' => 'Probation hanya boleh diperpanjang satu kali.']);
             }
-            $probation->update(['extended_until' => $extendedUntil ?? now()->addDays(30), 'extension_count' => $probation->extension_count + 1, 'status' => 'extended']);
+
+            if ($probation->status === 'extended') {
+                throw ValidationException::withMessages(['outcome' => 'Probation extended tidak bisa diperpanjang lagi.']);
+            }
+
+            $probation->update([
+                'extended_start_date' => $data['extended_start_date'] ?? now()->toDateString(),
+                'extended_until' => $data['extended_end_date'] ?? now()->addDays(30)->toDateString(),
+                'extension_count' => $probation->extension_count + 1,
+                'status' => 'extended',
+            ]);
 
             return;
         }
@@ -92,5 +116,18 @@ class ProbationService
             'extended' => 'extended',
             default => throw ValidationException::withMessages(['status' => 'Status probation tidak dapat dievaluasi.']),
         };
+    }
+
+    private function canSubmitEvaluation(User $actor, ProbationRecord $probation, string $milestone): bool
+    {
+        if ($actor->hasRole(Roles::Admin)) {
+            return true;
+        }
+
+        if ($actor->hasRole(Roles::HiringManager) && (int) $actor->department_id === (int) $probation->employee->department_id) {
+            return true;
+        }
+
+        return in_array($milestone, ['day90', 'extended'], true) && $actor->hasAnyRole([Roles::HrManager, Roles::HrRecruiter]);
     }
 }

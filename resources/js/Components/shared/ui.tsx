@@ -59,6 +59,42 @@ export function Badge({ children, tone = 'slate' }: { children: ReactNode; tone?
     return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${tones[tone]}`}>{children}</span>;
 }
 
+export function AlertDialog({ open, children }: { open: boolean; children: ReactNode }): JSX.Element | null {
+    if (!open) {
+        return null;
+    }
+
+    return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">{children}</div>;
+}
+
+export function AlertDialogContent({ children }: { children: ReactNode }): JSX.Element {
+    return <Card className="w-full max-w-md p-6">{children}</Card>;
+}
+
+export function AlertDialogHeader({ children }: { children: ReactNode }): JSX.Element {
+    return <div className="space-y-2">{children}</div>;
+}
+
+export function AlertDialogTitle({ children }: { children: ReactNode }): JSX.Element {
+    return <h2 className="text-lg font-semibold text-slate-900">{children}</h2>;
+}
+
+export function AlertDialogDescription({ children }: { children: ReactNode }): JSX.Element {
+    return <p className="text-sm leading-6 text-slate-600">{children}</p>;
+}
+
+export function AlertDialogFooter({ children }: { children: ReactNode }): JSX.Element {
+    return <div className="mt-6 flex justify-end gap-2">{children}</div>;
+}
+
+export function AlertDialogCancel({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { children: ReactNode }): JSX.Element {
+    return <Button type="button" variant="secondary" {...props}>{children}</Button>;
+}
+
+export function AlertDialogAction({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { children: ReactNode }): JSX.Element {
+    return <Button type="button" variant="danger" {...props}>{children}</Button>;
+}
+
 export function EmptyState({ title, description }: { title: string; description?: string }): JSX.Element {
     return (
         <div className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center">
