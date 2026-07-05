@@ -15,7 +15,6 @@ class ApprovalRecord extends Model
     protected $fillable = [
         'recruitment_request_id',
         'approval_chain_id',
-        'level',
         'approver_id',
         'action',
         'comment',
@@ -29,7 +28,6 @@ class ApprovalRecord extends Model
     protected function casts(): array
     {
         return [
-            'level' => 'integer',
             'acted_at' => 'datetime',
         ];
     }

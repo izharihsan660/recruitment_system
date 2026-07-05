@@ -230,10 +230,9 @@ Route::prefix('admin')
             'entities' => Entity::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
         ]))->name('departments.index');
         Route::get('approval-chains', fn () => Inertia::render('Admin/ApprovalChains/Index', [
-            'approvalChains' => ApprovalChain::query()->with(['department.entity', 'approverUser.roles'])->withCount('approvalRecords')->orderBy('department_id')->orderBy('level')->get()->map(fn (ApprovalChain $chain): array => [
+            'approvalChains' => ApprovalChain::query()->whereNotNull('approver_user_id')->with(['department.entity', 'approverUser.roles'])->withCount('approvalRecords')->orderBy('department_id')->latest('id')->get()->map(fn (ApprovalChain $chain): array => [
                 'id' => $chain->id,
                 'department_id' => $chain->department_id,
-                'level' => $chain->level,
                 'type' => $chain->type,
                 'approver_user_id' => $chain->approver_user_id,
                 'approver_role' => $chain->approver_role,

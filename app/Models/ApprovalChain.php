@@ -15,18 +15,10 @@ class ApprovalChain extends Model
 
     protected $fillable = [
         'department_id',
-        'level',
         'type',
         'approver_user_id',
         'approver_role',
     ];
-
-    protected function casts(): array
-    {
-        return [
-            'level' => 'integer',
-        ];
-    }
 
     public function department(): BelongsTo
     {

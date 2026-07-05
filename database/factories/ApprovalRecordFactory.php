@@ -17,7 +17,6 @@ class ApprovalRecordFactory extends Factory
         return [
             'recruitment_request_id' => RecruitmentRequest::factory(),
             'approval_chain_id' => ApprovalChain::factory(),
-            'level' => 1,
             'approver_id' => null,
             'action' => 'waiting',
             'comment' => null,

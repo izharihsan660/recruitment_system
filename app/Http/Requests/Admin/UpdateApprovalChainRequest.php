@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Admin;
 
-use App\Support\Roles;
 use Illuminate\Validation\Rule;
 
 class UpdateApprovalChainRequest extends AdminFormRequest
@@ -14,10 +13,7 @@ class UpdateApprovalChainRequest extends AdminFormRequest
 
         return [
             'department_id' => ['sometimes', 'required', 'integer', 'exists:departments,id'],
-            'level' => ['sometimes', 'required', 'integer', 'min:1', 'max:3', Rule::unique('approval_chains')->where('department_id', $departmentId)->ignore($approvalChain)],
-            'type' => ['sometimes', 'required', Rule::in(['user', 'role'])],
-            'approver_user_id' => ['nullable', 'required_if:type,user', 'prohibited_if:type,role', 'integer', 'exists:users,id'],
-            'approver_role' => ['nullable', 'required_if:type,role', 'prohibited_if:type,user', Rule::in(Roles::all())],
+            'approver_user_id' => ['required', 'integer', 'exists:users,id', Rule::unique('approval_chains', 'approver_user_id')->where('department_id', $departmentId)->ignore($approvalChain)],
         ];
     }
 }

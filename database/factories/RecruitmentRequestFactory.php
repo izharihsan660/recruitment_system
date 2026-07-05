@@ -53,7 +53,6 @@ class RecruitmentRequestFactory extends Factory
                 'uniform' => false,
             ],
             'status' => 'draft',
-            'current_approval_level' => null,
         ];
     }
 }

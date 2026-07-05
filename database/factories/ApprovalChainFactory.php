@@ -2,12 +2,13 @@
 
 namespace Database\Factories;
 
+use App\Models\ApprovalChain;
 use App\Models\Department;
-use App\Support\Roles;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ApprovalChain>
+ * @extends Factory<ApprovalChain>
  */
 class ApprovalChainFactory extends Factory
 {
@@ -15,10 +16,9 @@ class ApprovalChainFactory extends Factory
     {
         return [
             'department_id' => Department::factory(),
-            'level' => 1,
-            'type' => 'role',
-            'approver_user_id' => null,
-            'approver_role' => Roles::HrManager,
+            'type' => 'user',
+            'approver_user_id' => User::factory(),
+            'approver_role' => null,
         ];
     }
 }

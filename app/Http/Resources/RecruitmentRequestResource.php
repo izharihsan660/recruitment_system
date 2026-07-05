@@ -33,7 +33,6 @@ class RecruitmentRequestResource extends JsonResource
             'job_description' => $this->job_description,
             'facilities' => $this->facilities,
             'status' => $this->status,
-            'current_approval_level' => $this->current_approval_level,
             'entity' => new EntityResource($this->whenLoaded('entity')),
             'department' => new DepartmentResource($this->whenLoaded('department')),
             'requester' => new UserResource($this->whenLoaded('requester')),

@@ -17,7 +17,7 @@ class RecruitmentRequest extends Model
         'entity_id', 'department_id', 'requester_id', 'requester_position', 'requested_at',
         'position_name', 'headcount', 'employment_status', 'job_title', 'work_location', 'required_at',
         'reason_type', 'reason_notes', 'min_education', 'min_experience', 'required_skills',
-        'age_min', 'age_max', 'gender', 'job_description', 'facilities', 'status', 'current_approval_level',
+        'age_min', 'age_max', 'gender', 'job_description', 'facilities', 'status',
     ];
 
     protected $attributes = [
@@ -33,7 +33,6 @@ class RecruitmentRequest extends Model
             'age_min' => 'integer',
             'age_max' => 'integer',
             'facilities' => 'array',
-            'current_approval_level' => 'integer',
         ];
     }
 
@@ -54,7 +53,7 @@ class RecruitmentRequest extends Model
 
     public function approvalRecords(): HasMany
     {
-        return $this->hasMany(ApprovalRecord::class)->orderBy('level');
+        return $this->hasMany(ApprovalRecord::class)->latest('id');
     }
 
     public function jobPostings(): HasMany

@@ -110,52 +110,39 @@ class AdminSprintOneTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_approval_chain_allows_incomplete_user_level_while_building_chain(): void
+    public function test_approval_chain_stores_multiple_user_approvers_without_levels(): void
     {
         $admin = $this->adminUser();
         $department = Department::factory()->create();
+        $approver = User::factory()->create(['is_active' => true]);
 
         $this->actingAs($admin)
             ->post('/admin/approval-chains', [
                 'department_id' => $department->id,
-                'level' => 1,
-                'type' => 'user',
-                'approver_user_id' => $admin->id,
+                'user_ids' => [$admin->id, $approver->id],
             ])
             ->assertRedirect()
             ->assertSessionHas('success', 'Approval Chain berhasil dibuat.');
 
         $this->assertDatabaseHas('approval_chains', [
             'department_id' => $department->id,
-            'level' => 1,
             'type' => 'user',
             'approver_user_id' => $admin->id,
             'approver_role' => null,
         ]);
-
-        $hrDepartment = Department::factory()->create();
-
-        $this->actingAs($admin)
-            ->post('/admin/approval-chains', [
-                'department_id' => $hrDepartment->id,
-                'level' => 1,
-                'type' => 'role',
-                'approver_role' => Roles::HrManager,
-            ])
-            ->assertRedirect()
-            ->assertSessionHas('success', 'Approval Chain berhasil dibuat.');
-
-        $anotherDepartment = Department::factory()->create();
+        $this->assertDatabaseHas('approval_chains', [
+            'department_id' => $department->id,
+            'type' => 'user',
+            'approver_user_id' => $approver->id,
+            'approver_role' => null,
+        ]);
 
         $this->actingAs($admin)
             ->post('/admin/approval-chains', [
-                'department_id' => $anotherDepartment->id,
-                'level' => 1,
-                'type' => 'role',
-                'approver_role' => Roles::HrRecruiter,
+                'department_id' => $department->id,
+                'user_ids' => [$admin->id],
             ])
-            ->assertRedirect()
-            ->assertSessionHas('success', 'Approval Chain berhasil dibuat.');
+            ->assertSessionHasErrors('user_ids.0');
     }
 
     public function test_smtp_and_graph_secrets_are_encrypted_and_single_active(): void

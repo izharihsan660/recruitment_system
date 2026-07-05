@@ -51,7 +51,6 @@ export interface RecruitmentRequest {
     job_description?: string;
     facilities?: Record<string, boolean>;
     status?: string;
-    current_approval_level?: number;
     entity?: Entity;
     department?: Department;
     requester?: BasicUser;
@@ -61,7 +60,6 @@ export interface RecruitmentRequest {
 
 export interface ApprovalRecord {
     id: number;
-    level: number;
     approver?: BasicUser;
     action?: string | null;
     comment?: string | null;

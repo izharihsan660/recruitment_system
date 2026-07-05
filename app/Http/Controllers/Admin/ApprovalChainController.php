@@ -17,12 +17,14 @@ class ApprovalChainController extends Controller
 
     public function index(): AnonymousResourceCollection
     {
-        return ApprovalChainResource::collection(ApprovalChain::query()->with(['department.entity', 'approverUser.roles'])->withCount('approvalRecords')->orderBy('department_id')->orderBy('level')->paginate());
+        return ApprovalChainResource::collection(ApprovalChain::query()->whereNotNull('approver_user_id')->with(['department.entity', 'approverUser.roles'])->withCount('approvalRecords')->orderBy('department_id')->latest('id')->paginate());
     }
 
     public function store(StoreApprovalChainRequest $request): RedirectResponse
     {
-        $this->approvalChainService->create($request->validated());
+        $validated = $request->validated();
+
+        $this->approvalChainService->createMany((int) $validated['department_id'], $validated['user_ids']);
 
         return redirect()->back()->with('success', 'Approval Chain berhasil dibuat.');
     }

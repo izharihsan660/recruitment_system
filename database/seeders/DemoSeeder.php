@@ -116,23 +116,22 @@ class DemoSeeder extends Seeder
     private function approvalChains(array $departments, array $users): array
     {
         $definitions = [
-            'Human Resources' => [['level' => 1, 'type' => 'role', 'role' => Roles::HrManager]],
+            'Human Resources' => [$users['hrmanager@example.com']],
             'Operations' => [
-                ['level' => 1, 'type' => 'user', 'user' => $users['approver@example.com']],
-                ['level' => 2, 'type' => 'role', 'role' => Roles::HrManager],
+                $users['approver@example.com'],
+                $users['hrmanager@example.com'],
             ],
-            'Finance' => [['level' => 1, 'type' => 'role', 'role' => Roles::HrRecruiter]],
-            'IT' => [['level' => 1, 'type' => 'role', 'role' => Roles::HrManager]],
+            'Finance' => [$users['hr@example.com']],
+            'IT' => [$users['approver@example.com'], $users['hrmanager@example.com']],
         ];
 
-        return collect($definitions)->mapWithKeys(function (array $levels, string $departmentName) use ($departments): array {
-            $chains = collect($levels)->map(function (array $level) use ($departments, $departmentName): ApprovalChain {
+        return collect($definitions)->mapWithKeys(function (array $approvers, string $departmentName) use ($departments): array {
+            $chains = collect($approvers)->map(function (User $approver) use ($departments, $departmentName): ApprovalChain {
                 return ApprovalChain::query()->firstOrCreate(
-                    ['department_id' => $departments[$departmentName]->id, 'level' => $level['level']],
+                    ['department_id' => $departments[$departmentName]->id, 'approver_user_id' => $approver->id],
                     [
-                        'type' => $level['type'],
-                        'approver_user_id' => $level['user']->id ?? null,
-                        'approver_role' => $level['role'] ?? null,
+                        'type' => 'user',
+                        'approver_role' => null,
                     ],
                 );
             });
@@ -178,36 +177,25 @@ class DemoSeeder extends Seeder
                     'job_description' => "Mengisi kebutuhan posisi {$position} untuk demo pipeline.",
                     'facilities' => ['BPJS', 'THR'],
                     'status' => 'approved',
-                    'current_approval_level' => null,
                 ],
             );
 
-            $request->forceFill(['status' => 'approved', 'current_approval_level' => null])->save();
+            $request->forceFill(['status' => 'approved'])->save();
 
             foreach ($chains[$record['department']] as $chain) {
                 ApprovalRecord::query()->firstOrCreate(
-                    ['recruitment_request_id' => $request->id, 'level' => $chain->level],
+                    ['recruitment_request_id' => $request->id, 'approver_id' => $chain->approver_user_id],
                     [
                         'approval_chain_id' => $chain->id,
-                        'approver_id' => $chain->type === 'user' ? $chain->approver_user_id : $this->roleApproverId($chain->approver_role, $users),
                         'action' => 'approved',
                         'comment' => 'Approved for demo data.',
-                        'acted_at' => $now->copy()->subDays(19)->addHours($chain->level),
+                        'acted_at' => $now->copy()->subDays(19),
                     ],
                 );
             }
 
             return [$position => $request];
         })->all();
-    }
-
-    /** @param array<string, User> $users */
-    private function roleApproverId(?string $role, array $users): int
-    {
-        return match ($role) {
-            Roles::HrRecruiter => $users['hr@example.com']->id,
-            default => $users['hrmanager@example.com']->id,
-        };
     }
 
     /**

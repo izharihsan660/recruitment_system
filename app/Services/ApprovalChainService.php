@@ -3,41 +3,37 @@
 namespace App\Services;
 
 use App\Models\ApprovalChain;
-use App\Support\Roles;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
 class ApprovalChainService extends AdminCrudService
 {
+    public function createMany(int $departmentId, array $userIds): void
+    {
+        DB::transaction(function () use ($departmentId, $userIds): void {
+            foreach ($userIds as $userId) {
+                ApprovalChain::query()->firstOrCreate(
+                    [
+                        'department_id' => $departmentId,
+                        'approver_user_id' => $userId,
+                    ],
+                    [
+                        'type' => 'user',
+                        'approver_role' => null,
+                    ]
+                );
+            }
+        });
+    }
+
     public function create(array $data): Model
     {
-        return DB::transaction(function () use ($data) {
-            $approvalChain = parent::create($data);
-            $this->validateDepartmentChain((int) $approvalChain->department_id);
-
-            return $approvalChain;
-        });
+        return parent::create($this->normalizeApproverData($data));
     }
 
     public function update(Model $model, array $data): Model
     {
-        return DB::transaction(function () use ($model, $data) {
-            $approvalChain = parent::update($model, $data);
-            $this->validateDepartmentChain((int) $approvalChain->department_id);
-
-            return $approvalChain;
-        });
-    }
-
-    public function delete(Model $model): void
-    {
-        DB::transaction(function () use ($model) {
-            $departmentId = (int) $model->department_id;
-            parent::delete($model);
-            $this->validateDepartmentChain($departmentId);
-        });
+        return parent::update($model, $this->normalizeApproverData($data));
     }
 
     protected function modelClass(): string
@@ -45,51 +41,11 @@ class ApprovalChainService extends AdminCrudService
         return ApprovalChain::class;
     }
 
-    private function validateDepartmentChain(int $departmentId): void
+    private function normalizeApproverData(array $data): array
     {
-        $chains = ApprovalChain::query()
-            ->where('department_id', $departmentId)
-            ->orderBy('level')
-            ->get();
+        $data['type'] = 'user';
+        $data['approver_role'] = null;
 
-        $this->ensureChainHasValidShape($chains);
-    }
-
-    /**
-     * @param  Collection<int, ApprovalChain>  $chains
-     */
-    private function ensureChainHasValidShape(Collection $chains): void
-    {
-        if ($chains->count() > 3) {
-            throw ValidationException::withMessages([
-                'level' => 'Maksimal 3 approval level per department.',
-            ]);
-        }
-
-        if ($chains->isEmpty()) {
-            return;
-        }
-
-        $expectedLevels = range(1, $chains->count());
-        if ($chains->pluck('level')->values()->all() !== $expectedLevels) {
-            throw ValidationException::withMessages([
-                'level' => 'Level approval harus berurutan tanpa gap.',
-            ]);
-        }
-
-        $lastChain = $chains->last();
-        if ($lastChain->type === 'role' && ! in_array($lastChain->approver_role, [Roles::HrManager, Roles::HrRecruiter], true)) {
-            throw ValidationException::withMessages([
-                'approver_role' => 'Level terakhir harus bertipe role hr_manager atau hr_recruiter.',
-            ]);
-        }
-
-        $chains->each(function (ApprovalChain $chain): void {
-            if ($chain->type === 'role' && ! in_array($chain->approver_role, [Roles::HrManager, Roles::HrRecruiter], true)) {
-                throw ValidationException::withMessages([
-                    'approver_role' => 'Level terakhir harus bertipe role hr_manager atau hr_recruiter.',
-                ]);
-            }
-        });
+        return $data;
     }
 }

@@ -26,7 +26,7 @@ class FpkWorkflowTest extends TestCase
 
     private User $approver;
 
-    private User $hrManager;
+    private User $secondApprover;
 
     protected function setUp(): void
     {
@@ -45,68 +45,53 @@ class FpkWorkflowTest extends TestCase
         $this->requester->assignRole(Roles::HiringManager);
         $this->approver = User::factory()->for($this->department)->create(['is_active' => true]);
         $this->approver->assignRole(Roles::Approver);
-        $this->hrManager = User::factory()->for($this->department)->create(['is_active' => true]);
-        $this->hrManager->assignRole(Roles::HrManager);
+        $this->secondApprover = User::factory()->for($this->department)->create(['is_active' => true]);
+        $this->secondApprover->assignRole(Roles::HrManager);
 
         ApprovalChain::factory()->for($this->department)->create([
-            'level' => 1,
-            'type' => 'user',
             'approver_user_id' => $this->approver->id,
-            'approver_role' => null,
         ]);
 
         ApprovalChain::factory()->for($this->department)->create([
-            'level' => 2,
-            'type' => 'role',
-            'approver_user_id' => null,
-            'approver_role' => Roles::HrManager,
+            'approver_user_id' => $this->secondApprover->id,
         ]);
     }
 
-    public function test_fpk_draft_submit_approve_all_levels_becomes_approved(): void
+    public function test_fpk_submit_creates_waiting_records_for_all_approvers(): void
     {
-        $fpk = $this->createFpk();
+        $fpk = $this->submittedFpk();
 
-        $this->actingAs($this->requester)
-            ->post(route('fpk.submit', $fpk))
+        $this->assertSame('in_approval', $fpk->status);
+        $this->assertEqualsCanonicalizing(
+            [$this->approver->id, $this->secondApprover->id],
+            $fpk->approvalRecords()->pluck('approver_id')->all(),
+        );
+        $this->assertSame(['waiting', 'waiting'], $fpk->approvalRecords()->orderBy('approver_id')->pluck('action')->all());
+    }
+
+    public function test_second_approver_can_approve_first_and_fpk_approved_after_all_approve(): void
+    {
+        $fpk = $this->submittedFpk();
+
+        $this->actingAs($this->secondApprover)
+            ->post(route('fpk.approve', $fpk), ['comment' => 'Second OK'])
             ->assertRedirect(route('fpk.show', $fpk))
-            ->assertSessionHas('success', 'FPK berhasil disubmit.');
+            ->assertSessionHas('success', 'FPK berhasil disetujui.');
+
         $this->assertSame('in_approval', $fpk->refresh()->status);
-        $this->assertSame(1, $fpk->current_approval_level);
+        $this->assertDatabaseHas('approval_records', [
+            'recruitment_request_id' => $fpk->id,
+            'approver_id' => $this->secondApprover->id,
+            'action' => 'approved',
+        ]);
 
         $this->actingAs($this->approver)
             ->post(route('fpk.approve', $fpk), ['comment' => 'OK'])
             ->assertRedirect(route('fpk.show', $fpk))
             ->assertSessionHas('success', 'FPK berhasil disetujui.');
-        $this->assertSame('in_approval', $fpk->refresh()->status);
-        $this->assertSame(2, $fpk->current_approval_level);
 
-        $this->actingAs($this->hrManager)
-            ->post(route('fpk.approve', $fpk), ['comment' => 'Final OK'])
-            ->assertRedirect(route('fpk.show', $fpk))
-            ->assertSessionHas('success', 'FPK berhasil disetujui.');
         $this->assertSame('approved', $fpk->refresh()->status);
-        $this->assertNull($fpk->current_approval_level);
-        $this->assertSame(['approved', 'approved'], $fpk->approvalRecords()->orderBy('level')->pluck('action')->all());
-    }
-
-    public function test_fpk_submit_requires_final_approval_level_to_be_hr_role(): void
-    {
-        ApprovalChain::query()
-            ->where('department_id', $this->department->id)
-            ->where('level', 2)
-            ->delete();
-
-        $fpk = $this->createFpk();
-
-        $this->actingAs($this->requester)
-            ->postJson(route('fpk.submit', $fpk))
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'approver_role' => 'Level terakhir harus bertipe role hr_manager atau hr_recruiter.',
-            ]);
-
-        $this->assertSame('draft', $fpk->refresh()->status);
+        $this->assertSame(['approved', 'approved'], $fpk->approvalRecords()->orderBy('approver_id')->pluck('action')->all());
     }
 
     public function test_fpk_submit_requires_approval_chain(): void
@@ -125,11 +110,11 @@ class FpkWorkflowTest extends TestCase
         $this->assertSame('draft', $fpk->refresh()->status);
     }
 
-    public function test_fpk_draft_submit_reject_saves_comment_and_rejected_status(): void
+    public function test_fpk_reject_from_any_approver_immediately_rejects_fpk(): void
     {
         $fpk = $this->submittedFpk();
 
-        $this->actingAs($this->approver)
+        $this->actingAs($this->secondApprover)
             ->post(route('fpk.reject', $fpk), ['comment' => 'Budget belum tersedia'])
             ->assertRedirect(route('fpk.show', $fpk))
             ->assertSessionHas('success', 'FPK berhasil ditolak.');
@@ -137,15 +122,73 @@ class FpkWorkflowTest extends TestCase
         $this->assertSame('rejected', $fpk->refresh()->status);
         $this->assertDatabaseHas('approval_records', [
             'recruitment_request_id' => $fpk->id,
-            'level' => 1,
+            'approver_id' => $this->secondApprover->id,
             'action' => 'rejected',
             'comment' => 'Budget belum tersedia',
         ]);
+        $this->assertDatabaseHas('approval_records', [
+            'recruitment_request_id' => $fpk->id,
+            'approver_id' => $this->approver->id,
+            'action' => 'waiting',
+        ]);
     }
 
-    public function test_fpk_need_revision_returns_to_requester(): void
+    public function test_http_two_approvers_out_of_order_approval(): void
     {
         $fpk = $this->submittedFpk();
+
+        $this->actingAs($this->secondApprover)
+            ->post(route('fpk.approve', $fpk), ['comment' => 'Second approver approves first'])
+            ->assertRedirect(route('fpk.show', $fpk))
+            ->assertSessionHas('success', 'FPK berhasil disetujui.');
+
+        $this->assertSame('in_approval', $fpk->refresh()->status);
+        $this->assertDatabaseHas('approval_records', [
+            'recruitment_request_id' => $fpk->id,
+            'approver_id' => $this->secondApprover->id,
+            'action' => 'approved',
+        ]);
+        $this->assertDatabaseHas('approval_records', [
+            'recruitment_request_id' => $fpk->id,
+            'approver_id' => $this->approver->id,
+            'action' => 'waiting',
+        ]);
+
+        $this->actingAs($this->approver)
+            ->post(route('fpk.approve', $fpk), ['comment' => 'First approver approves after second'])
+            ->assertRedirect(route('fpk.show', $fpk))
+            ->assertSessionHas('success', 'FPK berhasil disetujui.');
+
+        $this->assertSame('approved', $fpk->refresh()->status);
+    }
+
+    public function test_http_reject_from_non_first_approver_immediately_rejects(): void
+    {
+        $fpk = $this->submittedFpk();
+
+        $this->actingAs($this->secondApprover)
+            ->post(route('fpk.reject', $fpk), ['comment' => 'Reject before first approver votes'])
+            ->assertRedirect(route('fpk.show', $fpk))
+            ->assertSessionHas('success', 'FPK berhasil ditolak.');
+
+        $this->assertSame('rejected', $fpk->refresh()->status);
+        $this->assertDatabaseHas('approval_records', [
+            'recruitment_request_id' => $fpk->id,
+            'approver_id' => $this->secondApprover->id,
+            'action' => 'rejected',
+            'comment' => 'Reject before first approver votes',
+        ]);
+        $this->assertDatabaseHas('approval_records', [
+            'recruitment_request_id' => $fpk->id,
+            'approver_id' => $this->approver->id,
+            'action' => 'waiting',
+        ]);
+    }
+
+    public function test_fpk_need_revision_returns_to_requester_and_resubmit_recreates_records(): void
+    {
+        $fpk = $this->submittedFpk();
+        $firstRecordIds = $fpk->approvalRecords()->pluck('id')->all();
 
         $this->actingAs($this->approver)
             ->post(route('fpk.need-revision', $fpk), ['comment' => 'Lengkapi kualifikasi'])
@@ -153,10 +196,18 @@ class FpkWorkflowTest extends TestCase
             ->assertSessionHas('success', 'FPK dikembalikan untuk revisi.');
 
         $this->assertSame('need_revision', $fpk->refresh()->status);
-        $this->assertNull($fpk->current_approval_level);
+
+        $this->actingAs($this->requester)
+            ->post(route('fpk.submit', $fpk))
+            ->assertRedirect(route('fpk.show', $fpk));
+
+        $newRecordIds = $fpk->refresh()->approvalRecords()->pluck('id')->all();
+        $this->assertSame('in_approval', $fpk->status);
+        $this->assertEmpty(array_intersect($firstRecordIds, $newRecordIds));
+        $this->assertSame(['waiting', 'waiting'], $fpk->approvalRecords()->orderBy('approver_id')->pluck('action')->all());
     }
 
-    public function test_unauthorized_actor_cannot_approve_current_level(): void
+    public function test_unauthorized_actor_cannot_approve_without_own_waiting_record(): void
     {
         $fpk = $this->submittedFpk();
         $otherApprover = User::factory()->for($this->department)->create(['is_active' => true]);
@@ -232,7 +283,7 @@ class FpkWorkflowTest extends TestCase
             'requester_id' => $this->requester->id,
         ])->toArray();
 
-        unset($payload['requester_id'], $payload['status'], $payload['current_approval_level']);
+        unset($payload['requester_id'], $payload['status']);
 
         return $payload;
     }

@@ -83,10 +83,10 @@ export default function FpkShow({ fpk }: { fpk: RecruitmentRequest }): JSX.Eleme
                         {fpk.approval_records?.map((record) => (
                             <div key={record.id} className="rounded-md border p-3">
                                 <div className="flex items-center justify-between">
-                                    <span className="font-semibold">Level {record.level}</span>
-                                    <Badge tone={record.action ? 'green' : 'yellow'}>{record.action ? humanize(record.action) : 'Menunggu'}</Badge>
+                                    <span className="font-semibold">{record.approver?.name ?? 'Approver'}</span>
+                                    <Badge tone={record.action === 'waiting' ? 'yellow' : 'green'}>{record.action ? humanize(record.action) : 'Menunggu'}</Badge>
                                 </div>
-                                <p className="mt-1 text-sm text-slate-600">{record.approver?.name ?? 'Approver'}</p>
+                                <p className="mt-1 text-sm text-slate-600">{record.approver?.email ?? 'User approver'}</p>
                                 {record.comment && <p className="mt-2 text-sm text-slate-500">{record.comment}</p>}
                             </div>
                         ))}
