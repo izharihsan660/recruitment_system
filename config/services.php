@@ -35,4 +35,18 @@ return [
         ],
     ],
 
+    'docuseal' => [
+        'api_url' => env('DOCUSEAL_API_URL'),
+        'api_key' => env('DOCUSEAL_API_KEY'),
+        'webhook_secret' => env('DOCUSEAL_WEBHOOK_SECRET'),
+    ],
+
+    'microsoft_graph' => [
+        'tenant_id' => env('MICROSOFT_GRAPH_TENANT_ID'),
+        'client_id' => env('MICROSOFT_GRAPH_CLIENT_ID'),
+        'client_secret' => env('MICROSOFT_GRAPH_CLIENT_SECRET'),
+        'calendar_user_email' => env('MICROSOFT_GRAPH_CALENDAR_USER_EMAIL'),
+        'recruitment_mailbox' => env('MICROSOFT_GRAPH_RECRUITMENT_MAILBOX'),
+    ],
+
 ];

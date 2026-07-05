@@ -1,0 +1,13 @@
+{
+    auto_https off
+
+    servers {
+        trusted_proxies static private_ranges
+    }
+}
+
+:80 {
+    root * /app/public
+    encode zstd br gzip
+    php_server
+}

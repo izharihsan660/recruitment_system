@@ -11,9 +11,9 @@ class DocuSealService
 {
     public function createSubmission(array $data): array
     {
-        $response = Http::withHeaders(['X-Auth-Token' => $this->config()->api_key])
+        $response = Http::withHeaders(['X-Auth-Token' => $this->apiKey()])
             ->acceptJson()
-            ->post($this->baseUrl().'/api/submissions', $data)
+            ->post($this->apiBaseUrl().'/submissions', $data)
             ->throw()
             ->json();
 
@@ -26,9 +26,9 @@ class DocuSealService
 
     public function getSubmissionStatus(string $submissionId): array
     {
-        $response = Http::withHeaders(['X-Auth-Token' => $this->config()->api_key])
+        $response = Http::withHeaders(['X-Auth-Token' => $this->apiKey()])
             ->acceptJson()
-            ->get($this->baseUrl().'/api/submissions/'.$submissionId)
+            ->get($this->apiBaseUrl().'/submissions/'.$submissionId)
             ->throw()
             ->json();
 
@@ -42,15 +42,15 @@ class DocuSealService
 
     public function downloadSignedDocument(string $submissionId): string
     {
-        return Http::withHeaders(['X-Auth-Token' => $this->config()->api_key])
-            ->get($this->baseUrl().'/api/submissions/'.$submissionId.'/documents/download')
+        return Http::withHeaders(['X-Auth-Token' => $this->apiKey()])
+            ->get($this->apiBaseUrl().'/submissions/'.$submissionId.'/documents/download')
             ->throw()
             ->body();
     }
 
     public function verifyWebhookSignature(string $payload, string $signature): bool
     {
-        $secret = $this->config()->webhook_secret;
+        $secret = config('services.docuseal.webhook_secret') ?: $this->config()->webhook_secret;
 
         if (blank($secret) || blank($signature)) {
             return false;
@@ -90,15 +90,33 @@ class DocuSealService
         return DocusealConfig::query()->active()->firstOrFail();
     }
 
-    private function baseUrl(): string
+    public static function normalizeApiBaseUrl(string $apiUrl): string
     {
-        $apiUrl = $this->config()->api_url;
+        $baseUrl = rtrim($apiUrl, '/');
+
+        return str_ends_with($baseUrl, '/api') ? $baseUrl : $baseUrl.'/api';
+    }
+
+    private function apiBaseUrl(): string
+    {
+        $apiUrl = config('services.docuseal.api_url') ?: $this->config()->api_url;
 
         if (blank($apiUrl)) {
             throw new \RuntimeException('DocuSeal API URL belum dikonfigurasi.');
         }
 
-        return rtrim($apiUrl, '/');
+        return self::normalizeApiBaseUrl($apiUrl);
+    }
+
+    private function apiKey(): string
+    {
+        $apiKey = config('services.docuseal.api_key') ?: $this->config()->api_key;
+
+        if (blank($apiKey)) {
+            throw new \RuntimeException('DocuSeal API key belum dikonfigurasi.');
+        }
+
+        return $apiKey;
     }
 
     private function ghostscriptAvailable(): bool

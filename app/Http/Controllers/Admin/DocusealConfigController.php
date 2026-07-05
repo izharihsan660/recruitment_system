@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\TestDocusealConnectionRequest;
 use App\Http\Requests\Admin\UpdateDocusealConfigRequest;
 use App\Http\Resources\DocusealConfigResource;
 use App\Models\DocusealConfig;
+use App\Services\DocuSealService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -66,7 +67,7 @@ class DocusealConfigController extends Controller
         Http::withHeaders(['X-Auth-Token' => $docusealConfig->api_key])
             ->acceptJson()
             ->timeout(10)
-            ->get(rtrim($docusealConfig->api_url, '/').'/api/submissions', ['limit' => 1])
+            ->get(DocuSealService::normalizeApiBaseUrl($docusealConfig->api_url).'/submissions', ['limit' => 1])
             ->throw();
 
         return response()->json(['message' => 'Koneksi DocuSeal berhasil.']);

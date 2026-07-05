@@ -20,10 +20,18 @@ class DatabaseSeeder extends Seeder
             DemoSeeder::class,
         ]);
 
-        DocusealConfig::query()->firstOrCreate(
-            ['api_url' => 'https://api.docuseal.com'],
-            ['api_key' => '', 'webhook_secret' => null, 'is_active' => true],
-        );
+        $docusealApiUrl = config('services.docuseal.api_url');
+
+        if (filled($docusealApiUrl)) {
+            DocusealConfig::query()->firstOrCreate(
+                ['api_url' => $docusealApiUrl],
+                [
+                    'api_key' => config('services.docuseal.api_key', ''),
+                    'webhook_secret' => config('services.docuseal.webhook_secret'),
+                    'is_active' => true,
+                ],
+            );
+        }
 
         User::firstOrCreate(
             ['email' => 'superadmin@example.com'],
