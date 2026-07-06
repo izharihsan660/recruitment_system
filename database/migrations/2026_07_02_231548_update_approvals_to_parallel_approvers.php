@@ -12,12 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('approval_records', function (Blueprint $table) {
+            $table->index('recruitment_request_id', 'approval_records_recruitment_request_id_index');
             $table->dropUnique('approval_records_recruitment_request_id_level_unique');
             $table->dropColumn('level');
             $table->unique(['recruitment_request_id', 'approver_id']);
         });
 
         Schema::table('approval_chains', function (Blueprint $table) {
+            $table->index('department_id', 'approval_chains_department_id_index');
             $table->dropUnique('approval_chains_department_id_level_unique');
             $table->dropColumn('level');
             $table->unique(['department_id', 'approver_user_id']);
