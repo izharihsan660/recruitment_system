@@ -20,7 +20,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\FpkController;
 use App\Http\Controllers\HiringDecisionController;
 use App\Http\Controllers\HrCandidateInputController;
-use App\Http\Conatrollers\HrInterviewController;
+use App\Http\Controllers\HrInterviewController;
 use App\Http\Controllers\JobPostingController;
 use App\Http\Controllers\McuSimperController;
 use App\Http\Controllers\NotificationController;
@@ -214,7 +214,7 @@ Route::middleware(['auth', 'active'])->group(function () {
         ]);
     })->name('pipeline.index');
 
-    Route::get('/preboarding', fn () => Inertia::render('Preboarding/Index'))->name('preboarding.index');
+    Route::get('/preboarding', fn () => Inertia::render('Preboarding/Index'))->name('preboarding.tasks.index');
 });
 
 Route::prefix('admin')
@@ -320,7 +320,6 @@ Route::middleware(['auth', 'active', 'role:'.Roles::Admin.'|'.Roles::HrRecruiter
 
     Route::prefix('hr/talent-pool')->group(function () {
 
-
         Route::get('/', function () {
             return Inertia::render('Hr/TalentPool/Index', [
                 'talentPools' => TalentPool::query()->with('candidate')->latest()->paginate(10),
@@ -337,7 +336,6 @@ Route::middleware(['auth', 'active', 'role:'.Roles::Admin.'|'.Roles::HrRecruiter
     });
 
     Route::prefix('hr/email-intake')->group(function () {
-    
 
         Route::get('/', function () {
             return Inertia::render('Hr/EmailIntake/Index', [
