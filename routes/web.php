@@ -126,7 +126,7 @@ Route::middleware(['auth', 'active'])->group(function () {
         'departments' => Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'entity_id']),
     ]))->name('fpk.edit');
 
-  
+    Route::prefix('fpk')->name('fpk.')->group(function () {
 
         Route::get('/', function () {
             return Inertia::render('Fpk/Index', [
@@ -318,6 +318,8 @@ Route::middleware(['auth', 'active', 'role:'.Roles::Admin.'|'.Roles::HrRecruiter
         Route::post('input-to-talent-pool', [HrCandidateInputController::class, 'inputToTalentPool']);
     });
 
+    Route::prefix('hr/talent-pool')->group(function () {
+
 
         Route::get('/', function () {
             return Inertia::render('Hr/TalentPool/Index', [
@@ -334,7 +336,8 @@ Route::middleware(['auth', 'active', 'role:'.Roles::Admin.'|'.Roles::HrRecruiter
         Route::post('{talentPool}/assign-to-job', [TalentPoolController::class, 'assignToJob']);
     });
 
-
+    Route::prefix('hr/email-intake')->group(function () {
+    
 
         Route::get('/', function () {
             return Inertia::render('Hr/EmailIntake/Index', [
