@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasColumn('graph_api_configs', 'docuseal_api_url')) {
+            return;
+        }
+
         Schema::table('graph_api_configs', function (Blueprint $table) {
             $table->string('docuseal_api_url')->nullable()->default(null)->change();
         });
@@ -21,6 +25,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (! Schema::hasColumn('graph_api_configs', 'docuseal_api_url')) {
+            return;
+        }
+
         Schema::table('graph_api_configs', function (Blueprint $table) {
             $table->string('docuseal_api_url')->nullable()->default('https://api.docuseal.com')->change();
         });
