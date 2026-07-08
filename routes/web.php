@@ -166,12 +166,12 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/job-postings/create', fn () => Inertia::render('JobPostings/Form', [
         'mode' => 'create',
         'jobPosting' => null,
-        'approvedFpk' => RecruitmentRequest::query()->where('status', 'approved')->latest()->get(['id', 'position_name', 'entity_id', 'department_id', 'work_location', 'job_description', 'requirements', 'min_education', 'min_experience', 'required_skills']),
+        'approvedFpk' => RecruitmentRequest::query()->where('status', 'approved')->latest()->get(['id', 'position_name', 'entity_id', 'department_id', 'work_location', 'job_description', 'min_education', 'min_experience', 'required_skills']),
     ]))->name('job-postings.create');
     Route::get('/job-postings/{job_posting}/edit', fn (JobPosting $jobPosting) => Inertia::render('JobPostings/Form', [
         'mode' => 'edit',
         'jobPosting' => $jobPosting->load(['entity', 'department', 'recruitmentRequest']),
-        'approvedFpk' => RecruitmentRequest::query()->where('status', 'approved')->latest()->get(['id', 'position_name', 'entity_id', 'department_id', 'work_location', 'job_description', 'requirements', 'min_education', 'min_experience', 'required_skills']),
+        'approvedFpk' => RecruitmentRequest::query()->where('status', 'approved')->latest()->get(['id', 'position_name', 'entity_id', 'department_id', 'work_location', 'job_description', 'min_education', 'min_experience', 'required_skills']),
     ]))->name('job-postings.edit');
     Route::post('/job-postings', [JobPostingController::class, 'store'])->name('job-postings.store');
     Route::get('/job-postings/{job_posting}', function (JobPosting $jobPosting) {
