@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class CandidateResource extends JsonResource
 {
@@ -18,6 +19,7 @@ class CandidateResource extends JsonResource
             'birth_date' => $this->birth_date?->toDateString(),
             'gender' => $this->gender,
             'cv_path' => $this->cv_path,
+            'cv_url' => $this->cv_path ? Storage::disk('public')->url($this->cv_path) : null,
             'cv_original_name' => $this->cv_original_name,
             'has_cv' => $this->hasCv(),
             'education' => $this->education,

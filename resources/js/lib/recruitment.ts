@@ -90,6 +90,7 @@ export interface Candidate {
     email: string;
     phone?: string | null;
     cv_path?: string | null;
+    cv_url?: string | null;
     cv_original_name?: string | null;
     has_cv?: boolean;
     updated_at?: string;

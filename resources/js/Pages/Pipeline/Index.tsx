@@ -253,7 +253,7 @@ export default function PipelineIndex({
                             </div>
                         )}
                     </div>
-                    <a className="mb-4 flex items-center gap-1 text-xs text-blue-600" href={selected.candidate?.cv_path ?? '#'}>
+                    <a className="mb-4 flex items-center gap-1 text-xs text-blue-600" href={selected.candidate?.cv_url ?? '#'}>
                         ↓ Download CV
                     </a>
                     <div className="mt-6 space-y-3">
