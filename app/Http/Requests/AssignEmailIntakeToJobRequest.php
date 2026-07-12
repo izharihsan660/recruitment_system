@@ -16,7 +16,7 @@ class AssignEmailIntakeToJobRequest extends FormRequest
     {
         return [
             'job_posting_id' => ['required', 'integer', 'exists:job_postings,id'],
-            'consent' => ['required', 'boolean'],
+            'consent' => ['required', 'boolean', 'accepted'],
         ];
     }
 }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\CompanyProfileController;
 use App\Http\Controllers\Admin\CompanySignerController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\DocusealConfigController;
+use App\Http\Controllers\Admin\EmailIntakeSettingController;
 use App\Http\Controllers\Admin\EntityController;
 use App\Http\Controllers\Admin\GraphApiConfigController;
 use App\Http\Controllers\Admin\SmtpSettingController;
@@ -36,6 +37,7 @@ use App\Http\Controllers\ScreeningController;
 use App\Http\Controllers\TalentPoolController;
 use App\Http\Controllers\UserInterviewController;
 use App\Http\Resources\ApplicationResource;
+use App\Http\Resources\EmailIntakeResource;
 use App\Models\Application as CandidateApplication;
 use App\Models\ApprovalChain;
 use App\Models\CandidateSource;
@@ -44,6 +46,7 @@ use App\Models\CompanySigner;
 use App\Models\Department;
 use App\Models\DocusealConfig;
 use App\Models\EmailIntake;
+use App\Models\EmailIntakeSetting;
 use App\Models\Entity;
 use App\Models\GraphApiConfig;
 use App\Models\JobPosting;
@@ -271,6 +274,9 @@ Route::prefix('admin')
         Route::get('graph-api', fn () => Inertia::render('Admin/Configurations/GraphApi', [
             'graphApiConfigs' => GraphApiConfig::query()->latest()->get(),
         ]));
+        Route::get('email-intake-settings', fn () => Inertia::render('Admin/Configurations/EmailIntake', [
+            'setting' => EmailIntakeSetting::query()->first(),
+        ]));
         Route::get('docuseal', fn () => Inertia::render('Admin/Configurations/Docuseal', [
             'docusealConfigs' => DocusealConfig::query()->latest()->get()->map(fn (DocusealConfig $config): array => [
                 'id' => $config->id,
@@ -298,6 +304,7 @@ Route::prefix('admin')
         Route::post('graph-api-configs/{graph_api_config}/test-connection', [GraphApiConfigController::class, 'testConnection'])
             ->name('graph-api-configs.test-connection');
         Route::apiResource('graph-api-configs', GraphApiConfigController::class);
+        Route::put('email-intake-settings', [EmailIntakeSettingController::class, 'update'])->name('email-intake-settings.update');
         Route::post('docuseal-configs/{docuseal_config}/test-connection', [DocusealConfigController::class, 'testConnection'])
             ->name('docuseal-configs.test-connection');
         Route::apiResource('docuseal-configs', DocusealConfigController::class);
@@ -337,14 +344,23 @@ Route::middleware(['auth', 'active', 'role:'.Roles::Admin.'|'.Roles::HrRecruiter
 
     Route::prefix('hr/email-intake')->group(function () {
 
-        Route::get('/', function () {
+        Route::get('/', function (Request $request) {
+            $status = $request->string('status', 'need_review')->toString();
+            $emails = EmailIntake::query()
+                ->with('suggestedJob')
+                ->when($status !== 'all', fn ($query) => $query->where('status', $status))
+                ->latest('received_at')
+                ->paginate(10)
+                ->withQueryString();
+
             return Inertia::render('Hr/EmailIntake/Index', [
-                'emails' => EmailIntake::query()->latest()->paginate(10),
+                'emails' => EmailIntakeResource::collection($emails)->response()->getData(true),
                 'jobPostings' => JobPosting::query()->where('status', 'open')->orderBy('position_name')->get(['id', 'position_name']),
+                'filters' => ['status' => $status],
             ]);
         });
         Route::get('{emailIntake}', fn (EmailIntake $emailIntake) => Inertia::render('Hr/EmailIntake/Show', [
-            'email' => $emailIntake,
+            'email' => (new EmailIntakeResource($emailIntake->load('suggestedJob')))->resolve(),
             'jobPostings' => JobPosting::query()->where('status', 'open')->orderBy('position_name')->get(['id', 'position_name']),
         ]));
         Route::post('fetch', [EmailIntakeController::class, 'fetch']);

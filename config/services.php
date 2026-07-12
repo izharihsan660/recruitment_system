@@ -49,4 +49,11 @@ return [
         'recruitment_mailbox' => env('MICROSOFT_GRAPH_RECRUITMENT_MAILBOX'),
     ],
 
+    'mail_graph_intake' => [
+        'tenant_id' => env('MAIL_GRAPH_INTAKE_TENANT_ID'),
+        'client_id' => env('MAIL_GRAPH_INTAKE_CLIENT_ID'),
+        'client_secret' => env('MAIL_GRAPH_INTAKE_CLIENT_SECRET'),
+        'mailbox' => env('MAIL_GRAPH_INTAKE_MAILBOX'),
+    ],
+
 ];

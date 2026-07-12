@@ -12,3 +12,4 @@ Artisan::command('inspire', function () {
 
 Schedule::call(fn () => app(PreboardingService::class)->sendH7Reminders())->dailyAt('08:00');
 Schedule::call(fn () => app(ProbationService::class)->sendH7Reminders())->dailyAt('08:00');
+Schedule::command('email-intake:fetch')->everyTenMinutes()->withoutOverlapping();

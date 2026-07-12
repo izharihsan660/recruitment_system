@@ -162,11 +162,13 @@ export interface EmailIntake {
     sender_email?: string | null;
     subject?: string | null;
     body?: string | null;
+    phone_number?: string | null;
     received_at?: string | null;
-    attachment_path?: string | null;
+    attachment_url?: string | null;
     status?: string;
     is_duplicate?: boolean;
     suggested_job_id?: number | null;
+    suggested_job?: JobPosting | null;
 }
 
 export interface TalentPoolItem {

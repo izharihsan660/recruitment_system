@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class EmailIntakeResource extends JsonResource
 {
@@ -16,8 +17,9 @@ class EmailIntakeResource extends JsonResource
             'sender_email' => $this->sender_email,
             'subject' => $this->subject,
             'body' => $this->body,
+            'phone_number' => $this->phone_number,
             'received_at' => $this->received_at,
-            'attachment_path' => $this->attachment_path,
+            'attachment_url' => $this->attachment_path ? Storage::disk('public')->url($this->attachment_path) : null,
             'suggested_job_id' => $this->suggested_job_id,
             'status' => $this->status,
             'reviewed_by' => $this->reviewed_by,

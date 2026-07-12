@@ -21,6 +21,10 @@ class CompanyProfileService
     public function update(array $data): CompanyProfile
     {
         $profile = $this->current();
+        $data['company_name'] ??= '';
+        $data['about'] ??= '';
+        $data['values'] ??= [];
+
         $profile->update($data);
 
         return $profile;

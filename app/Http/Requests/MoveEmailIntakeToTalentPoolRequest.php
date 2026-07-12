@@ -16,7 +16,7 @@ class MoveEmailIntakeToTalentPoolRequest extends FormRequest
     {
         return [
             'consent' => ['required', 'boolean', 'accepted'],
-            'notes' => ['nullable', 'string'],
+            'notes' => ['required', 'string'],
         ];
     }
 }

@@ -9,7 +9,7 @@ use App\Http\Resources\EmailIntakeResource;
 use App\Models\EmailIntake;
 use App\Models\JobPosting;
 use App\Services\EmailIntakeReviewService;
-use App\Services\EmailIntakeService;
+use App\Services\GraphMailIntakeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -17,7 +17,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 class EmailIntakeController extends Controller
 {
     public function __construct(
-        private readonly EmailIntakeService $emailIntakeService,
+        private readonly GraphMailIntakeService $graphMailIntakeService,
         private readonly EmailIntakeReviewService $emailIntakeReviewService,
     ) {}
 
@@ -36,9 +36,11 @@ class EmailIntakeController extends Controller
         return new EmailIntakeResource($emailIntake);
     }
 
-    public function fetch(): AnonymousResourceCollection
+    public function fetch(): RedirectResponse
     {
-        return EmailIntakeResource::collection($this->emailIntakeService->fetchEmails());
+        $emails = $this->graphMailIntakeService->fetchNewMessages();
+
+        return redirect()->back()->with('success', "{$emails->count()} email intake berhasil diproses.");
     }
 
     public function assignToJob(AssignEmailIntakeToJobRequest $request, EmailIntake $emailIntake): RedirectResponse

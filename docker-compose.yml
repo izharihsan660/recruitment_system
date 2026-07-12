@@ -10,6 +10,10 @@ services:
     environment:
       DB_HOST: mysql
       DB_PORT: 3306
+      MAIL_GRAPH_INTAKE_TENANT_ID: ${MAIL_GRAPH_INTAKE_TENANT_ID}
+      MAIL_GRAPH_INTAKE_CLIENT_ID: ${MAIL_GRAPH_INTAKE_CLIENT_ID}
+      MAIL_GRAPH_INTAKE_CLIENT_SECRET: ${MAIL_GRAPH_INTAKE_CLIENT_SECRET}
+      MAIL_GRAPH_INTAKE_MAILBOX: ${MAIL_GRAPH_INTAKE_MAILBOX}
     depends_on:
       mysql:
         condition: service_healthy
@@ -37,6 +41,10 @@ services:
     environment:
       DB_HOST: mysql
       DB_PORT: 3306
+      MAIL_GRAPH_INTAKE_TENANT_ID: ${MAIL_GRAPH_INTAKE_TENANT_ID}
+      MAIL_GRAPH_INTAKE_CLIENT_ID: ${MAIL_GRAPH_INTAKE_CLIENT_ID}
+      MAIL_GRAPH_INTAKE_CLIENT_SECRET: ${MAIL_GRAPH_INTAKE_CLIENT_SECRET}
+      MAIL_GRAPH_INTAKE_MAILBOX: ${MAIL_GRAPH_INTAKE_MAILBOX}
     depends_on:
       mysql:
         condition: service_healthy

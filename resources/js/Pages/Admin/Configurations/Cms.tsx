@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Button, Card, FormLabel, PageHeader, TextArea, TextInput } from '@/Components/shared/ui';
+import { Button, Card, FieldError, FormLabel, GlobalErrorAlert, PageHeader, TextArea, TextInput } from '@/Components/shared/ui';
 import { Head, router, useForm } from '@inertiajs/react';
 import { FormEvent } from 'react';
 
@@ -34,7 +34,7 @@ export default function Cms({ companyProfile }: { companyProfile?: Profile | nul
 
     function submit(event: FormEvent): void {
         event.preventDefault();
-        router.put('/admin/company-profile', form.data as any, {});
+        form.put('/admin/company-profile', { preserveScroll: true });
     }
 
     function setValue(index: number, field: keyof ValueItem, value: string): void {
@@ -48,16 +48,19 @@ export default function Cms({ companyProfile }: { companyProfile?: Profile | nul
             <Head title="CMS Portal" />
             <PageHeader title="CMS Portal" description="Kelola konten portal kandidat." />
             <form onSubmit={submit} className="space-y-6">
+                <GlobalErrorAlert errors={form.errors} />
                 <Card className="p-6">
                     <h2 className="mb-4 font-semibold">Hero</h2>
                     <div className="grid gap-4 md:grid-cols-2">
                         <div>
                             <FormLabel>Nama Perusahaan</FormLabel>
                             <TextInput value={form.data.company_name} onChange={(e) => form.setData('company_name', e.target.value)} />
+                            <FieldError message={form.errors.company_name} />
                         </div>
                         <div>
                             <FormLabel>Tagline</FormLabel>
                             <TextInput value={form.data.tagline} onChange={(e) => form.setData('tagline', e.target.value)} />
+                            <FieldError message={form.errors.tagline} />
                         </div>
                     </div>
                     {companyProfile?.full_hero_image_url && <img src={companyProfile.full_hero_image_url} alt="Hero" className="mt-4 h-40 rounded-md object-cover" />}
@@ -74,7 +77,7 @@ export default function Cms({ companyProfile }: { companyProfile?: Profile | nul
                                 }
 
                                 const formData = new FormData();
-                                formData.append('hero_image', file);
+                                formData.append('image', file);
                                 router.post('/admin/company-profile/hero-image', formData, { forceFormData: true, onSuccess: () => router.reload() });
                             }}
                             className="mt-1 block"
@@ -85,6 +88,7 @@ export default function Cms({ companyProfile }: { companyProfile?: Profile | nul
                 <Card className="p-6">
                     <h2 className="mb-4 font-semibold">Tentang Kami</h2>
                     <TextArea rows={5} value={form.data.about} onChange={(e) => form.setData('about', e.target.value)} />
+                    <FieldError message={form.errors.about} />
                 </Card>
 
                 <Card className="p-6">
@@ -101,6 +105,8 @@ export default function Cms({ companyProfile }: { companyProfile?: Profile | nul
                                     <TextInput placeholder="Judul" value={item.title} onChange={(e) => setValue(index, 'title', e.target.value)} />
                                     <TextInput placeholder="Deskripsi" value={item.description} onChange={(e) => setValue(index, 'description', e.target.value)} />
                                 </div>
+                                <FieldError message={form.errors[`values.${index}.title`]} />
+                                <FieldError message={form.errors[`values.${index}.description`]} />
                                 <Button type="button" variant="ghost" className="mt-2" onClick={() => form.setData('values', form.data.values.filter((_, itemIndex) => itemIndex !== index))}>
                                     Hapus
                                 </Button>
@@ -168,7 +174,10 @@ export default function Cms({ companyProfile }: { companyProfile?: Profile | nul
                     <h2 className="mb-4 font-semibold">Kontak</h2>
                     <div className="grid gap-4 md:grid-cols-3">
                         <TextInput placeholder="Alamat" value={form.data.address} onChange={(e) => form.setData('address', e.target.value)} />
-                        <TextInput placeholder="Email" value={form.data.email} onChange={(e) => form.setData('email', e.target.value)} />
+                        <div>
+                            <TextInput placeholder="Email" value={form.data.email} onChange={(e) => form.setData('email', e.target.value)} />
+                            <FieldError message={form.errors.email} />
+                        </div>
                         <TextInput placeholder="Nomor Telepon" value={form.data.phone} onChange={(e) => form.setData('phone', e.target.value)} />
                     </div>
                 </Card>

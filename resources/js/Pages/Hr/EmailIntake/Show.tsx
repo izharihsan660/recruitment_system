@@ -23,7 +23,9 @@ export default function EmailIntakeShow({ email, jobPostings }: { email: EmailIn
                         <Badge tone={email.is_duplicate ? 'red' : 'blue'}>{email.is_duplicate ? 'Duplicate' : humanize(email.status)}</Badge>
                     </div>
                     <p className="whitespace-pre-line text-sm text-slate-700">{email.body}</p>
-                    {email.attachment_path && <a className="mt-4 block text-sm text-blue-600" href={email.attachment_path}>Download Attachment CV</a>}
+                    {email.phone_number && <p className="mt-4 text-sm text-slate-600">Nomor HP terdeteksi: {email.phone_number}</p>}
+                    {email.suggested_job && <p className="mt-2 text-sm text-slate-600">Suggestion posisi: {email.suggested_job.position_name}</p>}
+                    {email.attachment_url && <a className="mt-4 block text-sm text-blue-600" href={email.attachment_url} target="_blank" rel="noreferrer">Download Attachment CV</a>}
                 </Card>
                 <Card className="p-6">
                     <h2 className="mb-4 font-semibold">Actions</h2>
@@ -35,9 +37,9 @@ export default function EmailIntakeShow({ email, jobPostings }: { email: EmailIn
                                 {jobPostings.map((job) => <option key={job.id} value={job.id}>{job.position_name}</option>)}
                             </SelectInput>
                         </div>
-                        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.data.consent} onChange={(event) => form.setData('consent', event.target.checked)} /> Consent</label>
+                        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.data.consent} onChange={(event) => form.setData('consent', event.target.checked)} /> Saya mengonfirmasi consent kandidat</label>
                         <Button onClick={() => router.post(`/hr/email-intake/${email.id}/assign-to-job`, { job_posting_id: Number(form.data.job_posting_id), consent: form.data.consent })}>Assign ke Lowongan</Button>
-                        <TextArea rows={3} placeholder="Catatan talent pool" value={form.data.notes} onChange={(event) => form.setData('notes', event.target.value)} />
+                        <TextArea rows={3} placeholder="Alasan masuk Talent Pool (wajib)" value={form.data.notes} onChange={(event) => form.setData('notes', event.target.value)} />
                         <Button variant="secondary" onClick={() => router.post(`/hr/email-intake/${email.id}/move-to-talent-pool`, { notes: form.data.notes, consent: form.data.consent })}>Pindah ke Talent Pool</Button>
                         <TextArea rows={3} placeholder="Alasan reject" value={form.data.reason} onChange={(event) => form.setData('reason', event.target.value)} />
                         <div className="grid grid-cols-3 gap-2">

@@ -6,6 +6,7 @@ use App\Models\Application;
 use App\Models\Candidate;
 use App\Models\EmailIntake;
 use App\Models\JobPosting;
+use App\Models\PipelineLog;
 use App\Models\TalentPool;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +19,14 @@ class EmailIntakeReviewService
 
     public function assignToJob(EmailIntake $intake, JobPosting $job, User $hr, bool $consent): Application
     {
+        if (! $consent) {
+            throw ValidationException::withMessages(['consent' => 'Consent diperlukan untuk assign ke lowongan.']);
+        }
+
+        if ($job->status !== 'open') {
+            throw ValidationException::withMessages(['job_posting_id' => 'Lowongan harus berstatus open.']);
+        }
+
         return DB::transaction(function () use ($intake, $job, $hr, $consent): Application {
             $candidate = $this->findOrCreateCandidate($intake, $hr);
 
@@ -25,11 +34,19 @@ class EmailIntakeReviewService
                 'job_posting_id' => $job->id,
                 'candidate_id' => $candidate->id,
                 'source' => 'email_intake',
-                'status' => 'applied',
+                'status' => 'screening',
                 'input_by' => $hr->id,
                 'consent' => $consent,
                 'consent_at' => $consent ? now() : null,
                 'consent_by' => $consent ? $hr->id : null,
+            ]);
+
+            PipelineLog::query()->create([
+                'application_id' => $application->id,
+                'from_stage' => null,
+                'to_stage' => 'screening',
+                'actor_id' => $hr->id,
+                'notes' => 'Kandidat di-assign manual dari Email Applicant Inbox.',
             ]);
 
             $intake->update([
@@ -47,6 +64,10 @@ class EmailIntakeReviewService
     {
         if (! $consent) {
             throw ValidationException::withMessages(['consent' => 'Consent diperlukan untuk masuk talent pool.']);
+        }
+
+        if (blank($notes)) {
+            throw ValidationException::withMessages(['notes' => 'Alasan wajib diisi untuk masuk talent pool.']);
         }
 
         return DB::transaction(function () use ($intake, $hr, $notes): TalentPool {

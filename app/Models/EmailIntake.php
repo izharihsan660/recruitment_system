@@ -13,7 +13,7 @@ class EmailIntake extends Model
     use HasFactory;
 
     protected $fillable = [
-        'graph_message_id', 'sender_name', 'sender_email', 'subject', 'body', 'received_at', 'attachment_path',
+        'graph_message_id', 'sender_name', 'sender_email', 'subject', 'body', 'phone_number', 'received_at', 'attachment_path',
         'suggested_job_id', 'status', 'reviewed_by', 'reviewed_at', 'rejection_reason', 'candidate_id', 'is_duplicate',
     ];
 

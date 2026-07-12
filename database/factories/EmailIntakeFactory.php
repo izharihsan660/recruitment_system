@@ -18,6 +18,7 @@ class EmailIntakeFactory extends Factory
             'sender_email' => fake()->unique()->safeEmail(),
             'subject' => fake()->sentence(),
             'body' => fake()->paragraph(),
+            'phone_number' => null,
             'received_at' => now(),
             'attachment_path' => null,
             'suggested_job_id' => null,

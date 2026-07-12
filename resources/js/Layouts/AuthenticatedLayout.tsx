@@ -301,6 +301,11 @@ function getMenuItemsByRole(role: string): MenuItem[] {
                     icon: <Network className="h-4 w-4" />,
                 },
                 {
+                    label: 'Graph Email Intake',
+                    href: '/admin/email-intake-settings',
+                    icon: <Mail className="h-4 w-4" />,
+                },
+                {
                     label: 'DocuSeal',
                     href: '/admin/docuseal',
                     icon: <FolderCog className="h-4 w-4" />,
