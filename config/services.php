@@ -56,4 +56,12 @@ return [
         'mailbox' => env('MAIL_GRAPH_INTAKE_MAILBOX'),
     ],
 
+    'mail_graph_sender' => [
+        'tenant_id' => env('MAIL_GRAPH_SENDER_TENANT_ID'),
+        'client_id' => env('MAIL_GRAPH_SENDER_CLIENT_ID'),
+        'client_secret' => env('MAIL_GRAPH_SENDER_CLIENT_SECRET'),
+        'mailbox' => env('MAIL_GRAPH_SENDER_MAILBOX'),
+        'from_name' => env('MAIL_FROM_NAME'),
+    ],
+
 ];

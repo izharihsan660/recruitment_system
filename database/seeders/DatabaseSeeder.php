@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             CandidateSourceSeeder::class,
             CompanyProfileSeeder::class,
             EmailIntakeSettingSeeder::class,
+            GraphMailSenderSettingSeeder::class,
             DemoSeeder::class,
         ]);
 
