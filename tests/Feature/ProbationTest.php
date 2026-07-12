@@ -5,10 +5,12 @@ namespace Tests\Feature;
 use App\Models\Application;
 use App\Models\Employee;
 use App\Models\User;
+use App\Notifications\SubjectTextNotification;
 use App\Services\ProbationService;
 use App\Support\Roles;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
@@ -88,6 +90,21 @@ class ProbationTest extends TestCase
         app(ProbationService::class)->submitOutcome($record, 'permanent', $this->user(Roles::HrRecruiter));
 
         $this->assertDatabaseHas('probation_records', ['id' => $record->id, 'final_outcome' => 'permanent', 'status' => 'permanent']);
+    }
+
+    public function test_h7_reminder_dikirim_ke_hiring_manager_dan_hr(): void
+    {
+        Notification::fake();
+        $employee = $this->employee();
+        $record = app(ProbationService::class)->create($employee);
+        $record->update(['day30_due' => now()->addDays(7)->toDateString()]);
+        $manager = $this->user(Roles::HiringManager, $employee->department_id);
+        $hrRecruiter = $this->user(Roles::HrRecruiter);
+        $hrManager = $this->user(Roles::HrManager);
+
+        app(ProbationService::class)->sendH7Reminders();
+
+        Notification::assertSentTo([$manager, $hrRecruiter, $hrManager], SubjectTextNotification::class);
     }
 
     private function employee(): Employee

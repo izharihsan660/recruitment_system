@@ -7,6 +7,7 @@ use App\Models\Application;
 use App\Models\CompanySigner;
 use App\Models\OfferingLetter;
 use App\Models\User;
+use App\Notifications\HrDocumentSignedNotification;
 use App\Notifications\SimpleTextNotification;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
@@ -107,6 +108,7 @@ class OfferingLetterService
                 $offering->update(['status' => 'signed', 'signed_at' => now(), 'pdf_path' => $path]);
                 ArchiveDocumentToSharePoint::dispatch($offering);
                 $this->pipelineService->moveToNextStage($offering->application, $offering->hrSigner);
+                $offering->hrSigner->notify((new HrDocumentSignedNotification($offering))->afterCommit());
             });
         }
 

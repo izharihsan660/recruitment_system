@@ -7,12 +7,14 @@ use App\Models\Application;
 use App\Models\BackgroundCheck;
 use App\Models\CompanySigner;
 use App\Models\User;
+use App\Notifications\HrDocumentSignedNotification;
 use App\Services\DocuSealService;
 use App\Services\OfferingLetterService;
 use App\Support\Roles;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Notification;
 use Mockery;
 use Tests\TestCase;
 
@@ -43,6 +45,7 @@ class OfferingLetterTest extends TestCase
     public function test_webhook_signed_sets_signed_and_dispatches_archive(): void
     {
         Bus::fake();
+        Notification::fake();
         [$application, $hr] = $this->offeringReadyApplication(['status' => 'offering']);
         $offering = app(OfferingLetterService::class)->create($application, $this->payload(), $hr);
         $offering->update(['status' => 'sent', 'docuseal_submission_id' => 'sub_123']);
@@ -52,6 +55,12 @@ class OfferingLetterTest extends TestCase
 
         $this->assertDatabaseHas('offering_letters', ['id' => $offering->id, 'status' => 'signed']);
         Bus::assertDispatched(ArchiveDocumentToSharePoint::class);
+        Notification::assertSentTo($hr, HrDocumentSignedNotification::class, function (HrDocumentSignedNotification $notification) use ($application, $hr): bool {
+            $mail = $notification->toMail($hr);
+
+            return $mail->subject === 'Offering Letter Signed - '.$application->candidate->name
+                && in_array('Offering Letter '.$application->candidate->name.' telah ditandatangani kedua pihak.', $mail->introLines, true);
+        });
     }
 
     public function test_webhook_expired_sets_status_expired(): void

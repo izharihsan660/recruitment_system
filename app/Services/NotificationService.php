@@ -7,11 +7,14 @@ use App\Models\InAppNotification;
 use App\Models\RecruitmentRequest;
 use App\Models\SmtpSetting;
 use App\Models\User;
+use App\Notifications\FpkApprovalRequestedNotification;
+use App\Notifications\FpkStatusChangedNotification;
 use App\Support\Roles;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 
 class NotificationService
 {
@@ -49,22 +52,26 @@ class NotificationService
 
     public function notifyFpkSubmitted(RecruitmentRequest $fpk, Collection $approvers, Collection $hrUsers): void
     {
-        $this->notifyMany($approvers->merge($hrUsers), 'fpk.submitted', 'FPK Menunggu Approval', "FPK {$fpk->position_name} menunggu approval.", $fpk);
+        $this->notifyManyInApp($approvers->merge($hrUsers), 'fpk.submitted', 'FPK Menunggu Approval', "FPK {$fpk->position_name} menunggu approval.", $fpk);
+        Notification::send($approvers->unique('id'), new FpkApprovalRequestedNotification($fpk));
     }
 
     public function notifyFpkApproved(RecruitmentRequest $fpk, User $requester, Collection $hrUsers): void
     {
-        $this->notifyMany($hrUsers->push($requester), 'fpk.approved', 'FPK Disetujui', "FPK {$fpk->position_name} sudah disetujui.", $fpk);
+        $this->notifyManyInApp($hrUsers->push($requester), 'fpk.approved', 'FPK Disetujui', "FPK {$fpk->position_name} sudah disetujui.", $fpk);
+        $requester->notify(new FpkStatusChangedNotification($fpk));
     }
 
     public function notifyFpkRejected(RecruitmentRequest $fpk, User $requester, Collection $hrUsers): void
     {
-        $this->notifyMany($hrUsers->push($requester), 'fpk.rejected', 'FPK Ditolak', "FPK {$fpk->position_name} ditolak.", $fpk);
+        $this->notifyManyInApp($hrUsers->push($requester), 'fpk.rejected', 'FPK Ditolak', "FPK {$fpk->position_name} ditolak.", $fpk);
+        $requester->notify(new FpkStatusChangedNotification($fpk));
     }
 
     public function notifyFpkNeedRevision(RecruitmentRequest $fpk, User $requester, Collection $hrUsers): void
     {
-        $this->notifyMany($hrUsers->push($requester), 'fpk.need_revision', 'FPK Perlu Revisi', "FPK {$fpk->position_name} perlu direvisi.", $fpk);
+        $this->notifyManyInApp($hrUsers->push($requester), 'fpk.need_revision', 'FPK Perlu Revisi', "FPK {$fpk->position_name} perlu direvisi.", $fpk);
+        $requester->notify(new FpkStatusChangedNotification($fpk));
     }
 
     public function hrUsers(): Collection
@@ -72,13 +79,12 @@ class NotificationService
         return User::role([Roles::HrManager, Roles::HrRecruiter], 'web')->get();
     }
 
-    private function notifyMany(Collection $users, string $type, string $title, string $body, RecruitmentRequest $fpk): void
+    private function notifyManyInApp(Collection $users, string $type, string $title, string $body, RecruitmentRequest $fpk): void
     {
         $users->unique('id')->each(function (User $user) use ($type, $title, $body, $fpk): void {
             $data = ['recruitment_request_id' => $fpk->id];
 
             $this->sendInApp($user, $type, $title, $body, $data);
-            $this->sendEmail($user, $title, $body);
         });
     }
 }

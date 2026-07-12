@@ -103,7 +103,13 @@ class ProbationService
             if (! in_array(now()->addDays(7)->toDateString(), [$record->day30_due->toDateString(), $record->day60_due->toDateString(), $record->day90_due->toDateString(), optional($record->extended_until)->toDateString()], true)) {
                 return;
             }
-            $record->employee->department->users->each(fn (User $user) => $user->notify(new SubjectTextNotification('Reminder Probation H-7', 'Probation '.$record->employee->full_name.' jatuh tempo dalam 7 hari.')));
+            $hiringManagers = $record->employee->department->users
+                ->filter(fn (User $user): bool => $user->hasRole(Roles::HiringManager));
+            $hrUsers = User::role([Roles::HrManager, Roles::HrRecruiter], 'web')->get();
+
+            $hiringManagers->merge($hrUsers)->unique('id')->each(
+                fn (User $user) => $user->notify(new SubjectTextNotification('Reminder Probation H-7', 'Probation '.$record->employee->full_name.' jatuh tempo dalam 7 hari.'))
+            );
         });
     }
 

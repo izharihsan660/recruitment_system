@@ -7,9 +7,12 @@ use App\Models\Department;
 use App\Models\Entity;
 use App\Models\RecruitmentRequest;
 use App\Models\User;
+use App\Notifications\FpkApprovalRequestedNotification;
+use App\Notifications\FpkStatusChangedNotification;
 use App\Support\Roles;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
@@ -67,6 +70,54 @@ class FpkWorkflowTest extends TestCase
             $fpk->approvalRecords()->pluck('approver_id')->all(),
         );
         $this->assertSame(['waiting', 'waiting'], $fpk->approvalRecords()->orderBy('approver_id')->pluck('action')->all());
+    }
+
+    public function test_fpk_submit_notifies_all_parallel_approvers_with_contextual_email(): void
+    {
+        Notification::fake();
+
+        $fpk = $this->submittedFpk();
+
+        foreach ([$this->approver, $this->secondApprover] as $approver) {
+            Notification::assertSentTo($approver, FpkApprovalRequestedNotification::class, function (FpkApprovalRequestedNotification $notification) use ($approver, $fpk): bool {
+                $mail = $notification->toMail($approver);
+
+                return $mail->subject === "Permintaan Approval FPK - {$fpk->position_name} ({$this->department->name})"
+                    && in_array('Pemohon: '.$this->requester->name, $mail->introLines, true)
+                    && in_array('Alasan kebutuhan: '.$fpk->reason_notes, $mail->introLines, true);
+            });
+        }
+    }
+
+    public function test_fpk_final_status_notifies_requester_with_relevant_content(): void
+    {
+        Notification::fake();
+        $fpk = $this->submittedFpk();
+
+        $this->actingAs($this->secondApprover)->post(route('fpk.reject', $fpk), ['comment' => 'Budget belum tersedia']);
+
+        Notification::assertSentTo($this->requester, FpkStatusChangedNotification::class, function (FpkStatusChangedNotification $notification) use ($fpk): bool {
+            $mail = $notification->toMail($this->requester);
+
+            return $mail->subject === 'FPK Anda Ditolak - '.$fpk->position_name
+                && in_array('Alasan: Budget belum tersedia', $mail->introLines, true);
+        });
+    }
+
+    public function test_fpk_need_revision_notification_links_requester_to_edit_page(): void
+    {
+        Notification::fake();
+        $fpk = $this->submittedFpk();
+
+        $this->actingAs($this->approver)->post(route('fpk.need-revision', $fpk), ['comment' => 'Lengkapi kualifikasi']);
+
+        Notification::assertSentTo($this->requester, FpkStatusChangedNotification::class, function (FpkStatusChangedNotification $notification) use ($fpk): bool {
+            $mail = $notification->toMail($this->requester);
+
+            return $mail->subject === 'FPK Memerlukan Revisi - '.$fpk->position_name
+                && in_array('Catatan revisi: Lengkapi kualifikasi', $mail->introLines, true)
+                && $mail->actionUrl === route('fpk.edit', $fpk);
+        });
     }
 
     public function test_second_approver_can_approve_first_and_fpk_approved_after_all_approve(): void

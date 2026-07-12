@@ -7,12 +7,14 @@ use App\Models\Application;
 use App\Models\CompanySigner;
 use App\Models\OfferingLetter;
 use App\Models\User;
+use App\Notifications\HrDocumentSignedNotification;
 use App\Services\DocuSealService;
 use App\Services\PkwtService;
 use App\Support\Roles;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Notification;
 use Mockery;
 use Tests\TestCase;
 
@@ -43,6 +45,7 @@ class PkwtTest extends TestCase
     public function test_webhook_completed_sets_signed_hired_and_dispatches_archive(): void
     {
         Bus::fake();
+        Notification::fake();
         [$application, $hr] = $this->pkwtReadyApplication();
         $pkwt = app(PkwtService::class)->create($application, $hr);
         $pkwt->update(['status' => 'sent', 'docuseal_submission_id' => 'sub_pkwt']);
@@ -53,6 +56,12 @@ class PkwtTest extends TestCase
         $this->assertDatabaseHas('pkwt_contracts', ['id' => $pkwt->id, 'status' => 'signed']);
         $this->assertDatabaseHas('applications', ['id' => $application->id, 'status' => 'hired']);
         Bus::assertDispatched(ArchiveDocumentToSharePoint::class);
+        Notification::assertSentTo($hr, HrDocumentSignedNotification::class, function (HrDocumentSignedNotification $notification) use ($application, $hr): bool {
+            $mail = $notification->toMail($hr);
+
+            return $mail->subject === 'PKWT Signed - '.$application->candidate->name
+                && in_array('PKWT '.$application->candidate->name.' telah ditandatangani kedua pihak dan kandidat otomatis berstatus Hired.', $mail->introLines, true);
+        });
     }
 
     private function pkwtReadyApplication(): array

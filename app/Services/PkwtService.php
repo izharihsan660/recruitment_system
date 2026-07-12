@@ -7,10 +7,9 @@ use App\Models\Application;
 use App\Models\CompanySigner;
 use App\Models\PkwtContract;
 use App\Models\User;
-use App\Notifications\SimpleTextNotification;
+use App\Notifications\HrDocumentSignedNotification;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
@@ -120,7 +119,7 @@ class PkwtService
                 $pkwt->update(['status' => 'signed', 'signed_at' => now(), 'pdf_path' => $path]);
                 $pkwt->application->update(['status' => 'hired']);
                 ArchiveDocumentToSharePoint::dispatch($pkwt);
-                Notification::send($pkwt->companySigner, new SimpleTextNotification('PKWT sudah signed, kandidat resmi hired.'));
+                $pkwt->companySigner->notify((new HrDocumentSignedNotification($pkwt))->afterCommit());
             });
         }
 
